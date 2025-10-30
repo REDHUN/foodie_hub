@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:foodiehub/models/menu_item.dart';
 import 'package:foodiehub/models/restaurant.dart';
 import 'package:foodiehub/providers/menu_cart_provider.dart';
+import 'package:foodiehub/screens/cart_screen.dart';
 import 'package:foodiehub/utils/constants.dart';
 import 'package:foodiehub/widgets/star_rating.dart';
 import 'package:provider/provider.dart';
@@ -182,7 +183,8 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       child: Card(
-        elevation: 2,
+        color: Colors.white,
+        elevation: 1,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -402,7 +404,10 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
               ),
               ElevatedButton(
                 onPressed: () {
-                  _showCartDialog(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const CartScreen()),
+                  );
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryColor,
@@ -426,126 +431,6 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
           ),
         );
       },
-    );
-  }
-
-  void _showCartDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Your Cart'),
-        content: Consumer<MenuCartProvider>(
-          builder: (context, cart, child) {
-            if (cart.items.isEmpty) {
-              return const Text('Your cart is empty');
-            }
-
-            return SizedBox(
-              width: double.maxFinite,
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    ...cart.items.map((item) {
-                      return Card(
-                        child: ListTile(
-                          leading: ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: CachedNetworkImage(
-                              imageUrl: item.menuItem.image,
-                              width: 50,
-                              height: 50,
-                              fit: BoxFit.cover,
-                            ),
-                          ),
-                          title: Text(
-                            item.menuItem.name,
-                            style: const TextStyle(fontSize: 14),
-                          ),
-                          subtitle: Text('₹${item.menuItem.price.toInt()}'),
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              IconButton(
-                                icon: const Icon(Icons.remove_circle_outline),
-                                onPressed: () {
-                                  cart.updateQuantity(
-                                    item.menuItem.id,
-                                    item.quantity - 1,
-                                  );
-                                },
-                              ),
-                              Text(
-                                '${item.quantity}',
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.add_circle_outline),
-                                onPressed: () {
-                                  cart.addToCart(item.menuItem);
-                                },
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    }),
-                    const SizedBox(height: 16),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'Total:',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        Text(
-                          '₹${cart.totalAmount.toInt()}',
-                          style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.primaryColor,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('CLOSE'),
-          ),
-          Consumer<MenuCartProvider>(
-            builder: (context, cart, child) {
-              return ElevatedButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Order placed successfully!'),
-                      backgroundColor: AppColors.successColor,
-                    ),
-                  );
-                  cart.clearCart();
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.successColor,
-                ),
-                child: const Text('PLACE ORDER'),
-              );
-            },
-          ),
-        ],
-      ),
     );
   }
 }
