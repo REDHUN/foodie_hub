@@ -5,27 +5,35 @@ A beautiful and modern food delivery Flutter app converted from an HTML prototyp
 ## Features ✨
 
 ### Core Functionality
-- **Product Catalog**: Browse through 12 delicious food items across 5 categories
-- **Smart Search**: Search products by name, description, or category
-- **Category Filtering**: Filter by Pizza, Burger, Sushi, Dessert, or Beverage
-- **Sort Options**: Sort by Featured, Price (Low to High/High to Low), Rating, or Newest
+- **Restaurant Catalog**: Browse through 11 restaurants with diverse cuisines
+- **Menu Items**: View detailed menu items for each restaurant
+- **Smart Search**: Search restaurants and menu items
+- **Category Filtering**: Filter by cuisine type
+- **Sort Options**: Sort by rating, delivery time, and more
 
-### Product Features
-- **Product Details**: View detailed information with large images
+### Restaurant Features
+- **Top-rated Restaurants**: Discover the best restaurants near you
+- **Restaurant Details**: View complete information with images
+- **Menu Display**: Browse organized menu items by category
 - **Star Ratings**: Visual rating system with 5-star display
-- **Product Badges**: Special badges like "Bestseller", "Popular", "Chef's Special"
-- **Reviews & Ratings**: Read and write customer reviews
+- **Delivery Info**: See delivery time and fees
 
 ### Shopping Cart
-- **Add to Cart**: Add items with quantity selector
+- **Add to Cart**: Add menu items with quantity selector
 - **Cart Management**: View, update quantities, or remove items
 - **Real-time Totals**: See cart count and total price dynamically
-- **Drawer Cart**: Beautiful bottom sheet cart interface
+- **Cart Screen**: Dedicated cart screen with checkout functionality
+
+### Firebase Integration 🔥
+- **Cloud Firestore**: Real-time data storage and synchronization
+- **Offline Support**: App works offline and syncs when connected
+- **Data Management**: Easy data migration and management
+- **Scalable**: Ready for production use
 
 ### UI/UX Features
 - **Modern Design**: Clean and intuitive Material Design 3 interface
 - **Responsive Layout**: Works on all screen sizes
-- **Hero Section**: Eye-catching promotional banner
+- **Beautiful Images**: Network image caching for smooth performance
 - **Smooth Animations**: Fluid transitions and interactions
 - **Color Scheme**: Vibrant and appetizing color palette
 
@@ -58,6 +66,7 @@ lib/
 - Flutter SDK (3.32.5 or higher)
 - Dart SDK
 - Android Studio / VS Code with Flutter extension
+- Firebase account (free tier works)
 
 ### Installation
 
@@ -72,7 +81,12 @@ cd foodiehub
 flutter pub get
 ```
 
-3. Run the app:
+3. **Firebase Setup** (Required for full functionality):
+   - See `FIREBASE_FIRST_STEPS.md` for quick setup
+   - See `FIREBASE_SETUP.md` for detailed guide
+   - App works with sample data if Firebase is not configured
+
+4. Run the app:
 ```bash
 flutter run
 ```
@@ -102,6 +116,10 @@ flutter run -d linux
 
 - **provider**: ^6.1.1 - State management
 - **cached_network_image**: ^3.3.1 - Network image caching
+- **firebase_core**: ^3.6.0 - Firebase initialization
+- **firebase_auth**: ^5.3.1 - User authentication
+- **cloud_firestore**: ^5.4.3 - Cloud database
+- **firebase_storage**: ^12.3.4 - File storage
 
 ## Color Palette 🎨
 
@@ -163,17 +181,34 @@ The app includes 12 sample products:
 - **Widgets**: Reusable components for UI consistency
 - **Screens**: Organized screen-based navigation
 
+## Firebase Integration 🔥
+
+The app is fully integrated with Firebase for production-ready features:
+
+### Collections
+- **restaurants**: Restaurant information with images, ratings, and delivery details
+- **menuItems**: Menu items for each restaurant with categories and pricing
+
+### Features
+- Real-time data synchronization
+- Offline support
+- Easy data migration from sample data
+- Scalable architecture ready for growth
+
+### Setup Guides
+- **Quick Start**: See `FIREBASE_FIRST_STEPS.md`
+- **Complete Guide**: See `FIREBASE_SETUP.md`
+
 ## Future Enhancements 🔮
 
-- Backend API integration
-- User authentication
-- Payment gateway
-- Order tracking
+- User authentication with Firebase Auth ✅ (Integrated)
 - Push notifications
 - Favorite/Wishlist functionality
-- Order history
+- Order history and tracking
 - Address management
+- Payment gateway integration
 - Multi-language support
+- Advanced analytics
 
 ## License 📄
 

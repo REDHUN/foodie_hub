@@ -2,14 +2,29 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:foodiehub/models/restaurant.dart';
 import 'package:foodiehub/providers/menu_cart_provider.dart';
+import 'package:foodiehub/providers/restaurant_provider.dart';
 import 'package:foodiehub/screens/cart_screen.dart';
 import 'package:foodiehub/screens/restaurant_detail_screen.dart';
 import 'package:foodiehub/utils/constants.dart';
 import 'package:foodiehub/widgets/star_rating.dart';
 import 'package:provider/provider.dart';
 
-class NewHomeScreen extends StatelessWidget {
+class NewHomeScreen extends StatefulWidget {
   const NewHomeScreen({super.key});
+
+  @override
+  State<NewHomeScreen> createState() => _NewHomeScreenState();
+}
+
+class _NewHomeScreenState extends State<NewHomeScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Load restaurants from Firebase on init
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<RestaurantProvider>(context, listen: false).initializeRestaurants();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -233,9 +248,14 @@ class NewHomeScreen extends StatelessWidget {
   }
 
   Widget _buildTopRatedSection(BuildContext context) {
-    final topRestaurants = sampleRestaurants.take(3).toList();
+    return Consumer<RestaurantProvider>(
+      builder: (context, restaurantProvider, child) {
+        final restaurants = restaurantProvider.restaurants.isNotEmpty
+            ? restaurantProvider.restaurants
+            : sampleRestaurants;
+        final topRestaurants = restaurants.take(3).toList();
 
-    return Column(
+        return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Padding(
@@ -257,67 +277,77 @@ class NewHomeScreen extends StatelessWidget {
           ),
         ),
       ],
+        );
+      },
     );
   }
 
   Widget _buildAllRestaurantsSection(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'All Restaurants',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+    return Consumer<RestaurantProvider>(
+      builder: (context, restaurantProvider, child) {
+        final restaurants = restaurantProvider.restaurants.isNotEmpty
+            ? restaurantProvider.restaurants
+            : sampleRestaurants;
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'All Restaurants',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    'Restaurants with online food delivery in Bangalore',
+                    style: TextStyle(fontSize: 12, color: Colors.grey),
+                  ),
+                ],
               ),
-              SizedBox(height: 4),
-              Text(
-                'Restaurants with online food delivery in Bangalore',
-                style: TextStyle(fontSize: 12, color: Colors.grey),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 12),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-          child: SizedBox(
-            height: 36,
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              children: [
-                _buildFilterButton('Filter'),
-                const SizedBox(width: 8),
-                _buildFilterButton('Sort By'),
-                const SizedBox(width: 8),
-                _buildFilterButton('Fast Delivery'),
-                const SizedBox(width: 8),
-                _buildFilterButton('New on Swiggy'),
-                const SizedBox(width: 8),
-                _buildFilterButton('Ratings'),
-              ],
             ),
-          ),
-        ),
-        const SizedBox(height: 16),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-          child: ListView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: sampleRestaurants.length,
-            itemBuilder: (context, index) {
-              return _buildFullRestaurantCard(
-                context,
-                sampleRestaurants[index],
-              );
-            },
-          ),
-        ),
-      ],
+            const SizedBox(height: 12),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: SizedBox(
+                height: 36,
+                child: ListView(
+                  scrollDirection: Axis.horizontal,
+                  children: [
+                    _buildFilterButton('Filter'),
+                    const SizedBox(width: 8),
+                    _buildFilterButton('Sort By'),
+                    const SizedBox(width: 8),
+                    _buildFilterButton('Fast Delivery'),
+                    const SizedBox(width: 8),
+                    _buildFilterButton('New on Swiggy'),
+                    const SizedBox(width: 8),
+                    _buildFilterButton('Ratings'),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: ListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: restaurants.length,
+                itemBuilder: (context, index) {
+                  return _buildFullRestaurantCard(
+                    context,
+                    restaurants[index],
+                  );
+                },
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 

@@ -1,13 +1,19 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:foodiehub/firebase_options.dart';
 import 'package:foodiehub/providers/cart_provider.dart';
 import 'package:foodiehub/providers/menu_cart_provider.dart';
+import 'package:foodiehub/providers/menu_item_provider.dart';
 import 'package:foodiehub/providers/product_provider.dart';
+import 'package:foodiehub/providers/restaurant_provider.dart';
 import 'package:foodiehub/screens/new_home_screen.dart';
 import 'package:foodiehub/utils/constants.dart';
 import 'package:provider/provider.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   runApp(const MyApp());
 }
 
@@ -21,6 +27,8 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => ProductProvider()),
         ChangeNotifierProvider(create: (_) => CartProvider()),
         ChangeNotifierProvider(create: (_) => MenuCartProvider()),
+        ChangeNotifierProvider(create: (_) => RestaurantProvider()),
+        ChangeNotifierProvider(create: (_) => MenuItemProvider()),
       ],
       child: MaterialApp(
         title: 'FoodieHub',
@@ -48,6 +56,7 @@ class MyApp extends StatelessWidget {
           ),
         ),
         home: const MainScreen(),
+        //  home: const FirebaseSetupScreen(),
       ),
     );
   }
