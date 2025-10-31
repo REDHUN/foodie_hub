@@ -22,7 +22,16 @@ Before using the app, you **MUST** enable Firestore in the Firebase Console:
 
 **Why this is required**: The app needs a Firestore database to store and retrieve data. Without it, you'll see connection errors.
 
-### Step 2: Migrate Sample Data
+### Step 2: Enable Email/Password Authentication
+
+Restaurant owners sign in with email and password. Enable this provider in Firebase:
+
+1. Go to: https://console.firebase.google.com/project/foodiehub-e8805/authentication/users
+2. Open the **Sign-in method** tab
+3. Enable **Email/Password** and click **Save**
+4. (Optional) Disable anonymous access if you don't need it
+
+### Step 3: Migrate Sample Data
 
 After enabling Firestore, use the Firebase Setup screen in the app to migrate sample data.
 
@@ -62,17 +71,22 @@ Stores restaurant information.
   "rating": "number",
   "deliveryTime": "string",
   "deliveryFee": "number",
-  "discount": "string (optional)"
+  "discount": "string (optional)",
+  "ownerId": "string (Firebase Auth UID)"
 }
 ```
 
-#### 2. `menuItems`
-Stores menu items for restaurants.
+##### `menuItems` subcollection
+Each restaurant document contains a `menuItems` subcollection.
+
+- Path: `restaurants/{restaurantId}/menuItems/{menuItemId}`
+- Stores menu items belonging to the specific restaurant
+- `restaurantId` field must match the parent document ID
 
 ```json
 {
   "id": "string",
-  "restaurantId": "string",
+  "restaurantId": "string", // kept for reference
   "name": "string",
   "description": "string",
   "price": "number",
@@ -146,6 +160,41 @@ Use the Firebase console to:
 - Update existing data
 - Monitor usage and performance
 
+## Restaurant Owner Portal
+
+Restaurant owners authenticate with Firebase Auth and manage their menus from the in-app dashboard.
+
+### Sign-up Flow (Recommended)
+- On the home screen, tap the **Owner Login** avatar → **Sign up**
+- Enter email, password, and restaurant details
+- The app creates a Firebase Auth user and a Firestore restaurant document with `ownerId`
+- After sign-up, the owner is redirected to the dashboard to manage menu items
+
+### Linking Existing Restaurants
+- Edit the restaurant document in Firestore and set `ownerId` to the owner's Firebase Auth UID
+- Owners can now log in with the email/password associated with that UID
+- Ensure security rules (above) are published so only the owner can modify their data
+
+### Sample Data Owners
+- Sample migration seeds Firebase Auth with owner accounts and links them to restaurants:
+
+| Restaurant        | Email                     | Password     |
+|-------------------|---------------------------|--------------|
+| Pizza Hut         | owner1@foodiehub.com      | password123  |
+| Burger King       | owner2@foodiehub.com      | password123  |
+| Sushi Station     | owner3@foodiehub.com      | password123  |
+| La Pinoz Pizza    | owner4@foodiehub.com      | password123  |
+| The Bowl Company  | owner5@foodiehub.com      | password123  |
+| Noodle House      | owner6@foodiehub.com      | password123  |
+| Taco Bell         | owner7@foodiehub.com      | password123  |
+| Baskin Robbins    | owner8@foodiehub.com      | password123  |
+| Biryani Blues     | owner9@foodiehub.com      | password123  |
+| Dosa Plaza        | owner10@foodiehub.com     | password123  |
+| Curry House       | owner11@foodiehub.com     | password123  |
+
+- Update these credentials for production, and use strong passwords
+- Running the migration signs out any current Firebase Auth session in the app
+
 ## Testing Firebase Integration
 
 1. Run the app: `flutter run`
@@ -164,9 +213,9 @@ Use the Firebase Setup screen to migrate data or manually add items through the 
 ### Via Firebase Console
 
 1. Go to https://console.firebase.google.com/project/foodiehub-e8805/firestore
-2. Click on the collection (`restaurants` or `menuItems`)
-3. Click "Add document"
-4. Enter the data following the structure above
+2. Select the `restaurants` collection and either create or open a restaurant document
+3. Inside the restaurant document, click “Add collection” → `menuItems`
+4. Add menu item documents following the structure above
 5. Save
 
 ### Via Code
@@ -234,13 +283,37 @@ Update Firestore security rules in Firebase console:
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    function ownerIdForRestaurant(String restaurantId) {
+      return get(/databases/$(database)/documents/restaurants/$(restaurantId)).data.ownerId;
+    }
+
     match /restaurants/{restaurantId} {
       allow read: if true;
-      allow write: if false; // Update based on your needs
-    }
-    match /menuItems/{itemId} {
-      allow read: if true;
-      allow write: if false; // Update based on your needs
+
+      allow create: if request.auth != null
+        && request.resource.data.ownerId == request.auth.uid;
+
+      allow update: if request.auth != null
+        && resource.data.ownerId == request.auth.uid
+        && request.resource.data.ownerId == resource.data.ownerId;
+
+      allow delete: if request.auth != null
+        && resource.data.ownerId == request.auth.uid;
+
+      match /menuItems/{menuItemId} {
+        allow read: if true;
+
+        allow create: if request.auth != null
+          && ownerIdForRestaurant(restaurantId) == request.auth.uid
+          && request.resource.data.restaurantId == restaurantId;
+
+        allow update: if request.auth != null
+          && ownerIdForRestaurant(restaurantId) == request.auth.uid
+          && resource.data.restaurantId == restaurantId;
+
+        allow delete: if request.auth != null
+          && ownerIdForRestaurant(restaurantId) == request.auth.uid;
+      }
     }
   }
 }

@@ -1,9 +1,12 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:foodiehub/models/restaurant.dart';
+import 'package:foodiehub/providers/auth_provider.dart';
 import 'package:foodiehub/providers/menu_cart_provider.dart';
 import 'package:foodiehub/providers/restaurant_provider.dart';
 import 'package:foodiehub/screens/cart_screen.dart';
+import 'package:foodiehub/screens/owner_dashboard_screen.dart';
+import 'package:foodiehub/screens/owner_login_screen.dart';
 import 'package:foodiehub/screens/restaurant_detail_screen.dart';
 import 'package:foodiehub/utils/constants.dart';
 import 'package:foodiehub/widgets/star_rating.dart';
@@ -26,29 +29,48 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
     });
   }
 
+  Future<void> _refreshData() async {
+    await Provider.of<RestaurantProvider>(context, listen: false).loadRestaurants();
+  }
+
+  String _getOwnerInitials(String? email) {
+    if (email == null || email.isEmpty) {
+      return 'ME';
+    }
+    final localPart = email.split('@').first;
+    if (localPart.length >= 2) {
+      return localPart.substring(0, 2).toUpperCase();
+    }
+    return localPart.toUpperCase();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Top Header
-              _buildHeader(context),
-              // Search Bar
-              _buildSearchBar(context),
-              const SizedBox(height: 20),
-              // Categories Section
-              _buildCategoriesSection(),
-              const SizedBox(height: 30),
-              // Top-rated Section
-              _buildTopRatedSection(context),
-              const SizedBox(height: 30),
-              // All Restaurants Section
-              _buildAllRestaurantsSection(context),
-            ],
+        child: RefreshIndicator(
+          onRefresh: _refreshData,
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Top Header
+                _buildHeader(context),
+                // Search Bar
+                _buildSearchBar(context),
+                const SizedBox(height: 20),
+                // Categories Section
+                _buildCategoriesSection(),
+                const SizedBox(height: 30),
+                // Top-rated Section
+                _buildTopRatedSection(context),
+                const SizedBox(height: 30),
+                // All Restaurants Section
+                _buildAllRestaurantsSection(context),
+              ],
+            ),
           ),
         ),
       ),
@@ -93,26 +115,52 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
               ],
             ),
           ),
-          Stack(
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: const BoxDecoration(
-                  color: AppColors.darkColor,
-                  shape: BoxShape.circle,
-                ),
-                child: const Center(
-                  child: Text(
-                    'JS',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
+          Consumer<AuthProvider>(
+            builder: (context, auth, _) {
+              final isAuthenticated = auth.isAuthenticated;
+              final initials = _getOwnerInitials(auth.user?.email);
+              return Tooltip(
+                message: isAuthenticated
+                    ? 'Manage restaurant'
+                    : 'Restaurant owner login',
+                child: GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => isAuthenticated
+                            ? const OwnerDashboardScreen()
+                            : const OwnerLoginScreen(),
+                      ),
+                    );
+                  },
+                  child: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: isAuthenticated
+                          ? AppColors.darkColor
+                          : Colors.grey[200],
+                      shape: BoxShape.circle,
+                    ),
+                    child: Center(
+                      child: isAuthenticated
+                          ? Text(
+                              initials,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            )
+                          : const Icon(
+                              Icons.person_outline,
+                              color: AppColors.darkColor,
+                            ),
                     ),
                   ),
                 ),
-              ),
-            ],
+              );
+            },
           ),
           const SizedBox(width: 12),
           GestureDetector(

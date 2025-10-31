@@ -30,6 +30,18 @@ class Categories {
 // Sort options
 enum SortOption { featured, priceLow, priceHigh, rating, newest }
 
+class SampleOwnerAccount {
+  final String restaurantId;
+  final String email;
+  final String password;
+
+  const SampleOwnerAccount({
+    required this.restaurantId,
+    required this.email,
+    required this.password,
+  });
+}
+
 // Sample products data
 final List<Product> sampleProducts = [
   Product(
@@ -229,6 +241,7 @@ final List<Restaurant> sampleRestaurants = [
     deliveryTime: "30-35 mins",
     deliveryFee: 0.6,
     discount: "50% OFF UPTO ₹100",
+    ownerId: "owner_1",
   ),
   Restaurant(
     id: "2",
@@ -240,6 +253,7 @@ final List<Restaurant> sampleRestaurants = [
     deliveryTime: "25-30 mins",
     deliveryFee: 0.5,
     discount: "₹125 OFF ABOVE ₹199",
+    ownerId: "owner_2",
   ),
   Restaurant(
     id: "3",
@@ -251,6 +265,7 @@ final List<Restaurant> sampleRestaurants = [
     deliveryTime: "35-40 mins",
     deliveryFee: 0.8,
     discount: "40% OFF UPTO ₹80",
+    ownerId: "owner_3",
   ),
   Restaurant(
     id: "4",
@@ -262,6 +277,7 @@ final List<Restaurant> sampleRestaurants = [
     deliveryTime: "28-33 mins",
     deliveryFee: 0.6,
     discount: "60% OFF UPTO ₹120",
+    ownerId: "owner_4",
   ),
   Restaurant(
     id: "5",
@@ -273,6 +289,7 @@ final List<Restaurant> sampleRestaurants = [
     deliveryTime: "20-25 mins",
     deliveryFee: 0.5,
     discount: "50% OFF UPTO ₹100",
+    ownerId: "owner_5",
   ),
   Restaurant(
     id: "6",
@@ -283,6 +300,7 @@ final List<Restaurant> sampleRestaurants = [
     rating: 4.3,
     deliveryTime: "30-35 mins",
     deliveryFee: 0.7,
+    ownerId: "owner_6",
   ),
   Restaurant(
     id: "7",
@@ -294,6 +312,7 @@ final List<Restaurant> sampleRestaurants = [
     deliveryTime: "25-30 mins",
     deliveryFee: 0.5,
     discount: "₹100 OFF ABOVE ₹299",
+    ownerId: "owner_7",
   ),
   Restaurant(
     id: "8",
@@ -304,6 +323,7 @@ final List<Restaurant> sampleRestaurants = [
     rating: 4.6,
     deliveryTime: "15-20 mins",
     deliveryFee: 0.4,
+    ownerId: "owner_8",
   ),
   Restaurant(
     id: "9",
@@ -315,6 +335,7 @@ final List<Restaurant> sampleRestaurants = [
     deliveryTime: "30-35 mins",
     deliveryFee: 0.6,
     discount: "50% OFF UPTO ₹100",
+    ownerId: "owner_9",
   ),
   Restaurant(
     id: "10",
@@ -325,6 +346,7 @@ final List<Restaurant> sampleRestaurants = [
     rating: 4.3,
     deliveryTime: "25-30 mins",
     deliveryFee: 0.5,
+    ownerId: "owner_10",
   ),
   Restaurant(
     id: "11",
@@ -336,6 +358,65 @@ final List<Restaurant> sampleRestaurants = [
     deliveryTime: "32-37 mins",
     deliveryFee: 0.6,
     discount: "40% OFF UPTO ₹80",
+    ownerId: "owner_11",
+  ),
+];
+
+const List<SampleOwnerAccount> sampleOwnerAccounts = [
+  SampleOwnerAccount(
+    restaurantId: "1",
+    email: "owner1@foodiehub.com",
+    password: "password123",
+  ),
+  SampleOwnerAccount(
+    restaurantId: "2",
+    email: "owner2@foodiehub.com",
+    password: "password123",
+  ),
+  SampleOwnerAccount(
+    restaurantId: "3",
+    email: "owner3@foodiehub.com",
+    password: "password123",
+  ),
+  SampleOwnerAccount(
+    restaurantId: "4",
+    email: "owner4@foodiehub.com",
+    password: "password123",
+  ),
+  SampleOwnerAccount(
+    restaurantId: "5",
+    email: "owner5@foodiehub.com",
+    password: "password123",
+  ),
+  SampleOwnerAccount(
+    restaurantId: "6",
+    email: "owner6@foodiehub.com",
+    password: "password123",
+  ),
+  SampleOwnerAccount(
+    restaurantId: "7",
+    email: "owner7@foodiehub.com",
+    password: "password123",
+  ),
+  SampleOwnerAccount(
+    restaurantId: "8",
+    email: "owner8@foodiehub.com",
+    password: "password123",
+  ),
+  SampleOwnerAccount(
+    restaurantId: "9",
+    email: "owner9@foodiehub.com",
+    password: "password123",
+  ),
+  SampleOwnerAccount(
+    restaurantId: "10",
+    email: "owner10@foodiehub.com",
+    password: "password123",
+  ),
+  SampleOwnerAccount(
+    restaurantId: "11",
+    email: "owner11@foodiehub.com",
+    password: "password123",
   ),
 ];
 

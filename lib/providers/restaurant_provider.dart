@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:foodiehub/models/restaurant.dart';
 import 'package:foodiehub/services/restaurant_service.dart';
@@ -7,10 +9,16 @@ class RestaurantProvider with ChangeNotifier {
   List<Restaurant> _restaurants = [];
   bool _isLoading = false;
   String? _error;
+  StreamSubscription<List<Restaurant>>? _subscription;
+  bool _isListening = false;
 
   List<Restaurant> get restaurants => _restaurants;
   bool get isLoading => _isLoading;
   String? get error => _error;
+
+  RestaurantProvider() {
+    _subscribeToRestaurants();
+  }
 
   // Load restaurants from Firebase
   Future<void> loadRestaurants() async {
@@ -32,19 +40,32 @@ class RestaurantProvider with ChangeNotifier {
 
   // Load initial data if Firebase is empty
   Future<void> initializeRestaurants() async {
-    // First, try to load from Firebase
-    await loadRestaurants();
-
-    // If Firebase is empty, add sample data
-    if (_restaurants.isEmpty) {
-      //  await _addSampleRestaurants();
+    if (!_isListening) {
+      _subscribeToRestaurants();
+    } else if (!_isLoading && _restaurants.isEmpty) {
+      await loadRestaurants();
     }
   }
 
-  Future<void> _addSampleRestaurants() async {
-    // Add sample restaurants to Firebase
-    // This is a one-time setup when Firebase is empty
-    // You can comment this out after initial setup
+  void _subscribeToRestaurants() {
+    if (_isListening) return;
+    _isListening = true;
+    _isLoading = true;
+    notifyListeners();
+
+    _subscription = _restaurantService.getRestaurantsStream().listen(
+      (restaurants) {
+        _restaurants = restaurants;
+        _isLoading = false;
+        _error = null;
+        notifyListeners();
+      },
+      onError: (error) {
+        _error = 'Failed to load restaurants: $error';
+        _isLoading = false;
+        notifyListeners();
+      },
+    );
   }
 
   // Get restaurant by ID
@@ -59,27 +80,24 @@ class RestaurantProvider with ChangeNotifier {
   // Add a new restaurant
   Future<bool> addRestaurant(Restaurant restaurant) async {
     final success = await _restaurantService.addRestaurant(restaurant);
-    if (success) {
-      await loadRestaurants();
-    }
     return success;
   }
 
   // Update a restaurant
   Future<bool> updateRestaurant(Restaurant restaurant) async {
     final success = await _restaurantService.updateRestaurant(restaurant);
-    if (success) {
-      await loadRestaurants();
-    }
     return success;
   }
 
   // Delete a restaurant
   Future<bool> deleteRestaurant(String id) async {
     final success = await _restaurantService.deleteRestaurant(id);
-    if (success) {
-      await loadRestaurants();
-    }
     return success;
+  }
+
+  @override
+  void dispose() {
+    _subscription?.cancel();
+    super.dispose();
   }
 }

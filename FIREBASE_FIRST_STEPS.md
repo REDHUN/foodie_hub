@@ -69,6 +69,15 @@ Once Firestore is enabled, you can migrate sample data:
 1. Add the Firebase Setup screen to your app (see instructions below)
 2. Or use the migration script programmatically
 
+### Step 6: Enable Owner Login (Optional but Recommended)
+
+Restaurant owners authenticate with email and password:
+
+1. Go to Firebase Console → **Authentication** → **Sign-in method**
+2. Enable **Email/Password** and save
+3. Owners can now sign up via the in-app Owner Login screen
+4. After running the Firebase Setup migration, sample accounts are created (email `owner1@foodiehub.com` … `owner11@foodiehub.com`, password `password123`)
+
 ## Adding Firebase Setup Screen
 
 To add the Firebase Setup screen to your app for easier data management:

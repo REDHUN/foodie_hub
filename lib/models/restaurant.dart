@@ -7,6 +7,7 @@ class Restaurant {
   final String deliveryTime;
   final double deliveryFee;
   final String? discount;
+  final String? ownerId;
 
   Restaurant({
     required this.id,
@@ -17,6 +18,7 @@ class Restaurant {
     required this.deliveryTime,
     required this.deliveryFee,
     this.discount,
+    this.ownerId,
   });
 
   factory Restaurant.fromJson(Map<String, dynamic> json) {
@@ -29,6 +31,7 @@ class Restaurant {
       deliveryTime: json['deliveryTime'] as String,
       deliveryFee: (json['deliveryFee'] as num).toDouble(),
       discount: json['discount'] as String?,
+      ownerId: json['ownerId'] as String?,
     );
   }
 
@@ -42,6 +45,31 @@ class Restaurant {
       'deliveryTime': deliveryTime,
       'deliveryFee': deliveryFee,
       'discount': discount,
+      'ownerId': ownerId,
     };
+  }
+
+  Restaurant copyWith({
+    String? id,
+    String? name,
+    String? image,
+    String? cuisine,
+    double? rating,
+    String? deliveryTime,
+    double? deliveryFee,
+    String? discount,
+    String? ownerId,
+  }) {
+    return Restaurant(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      image: image ?? this.image,
+      cuisine: cuisine ?? this.cuisine,
+      rating: rating ?? this.rating,
+      deliveryTime: deliveryTime ?? this.deliveryTime,
+      deliveryFee: deliveryFee ?? this.deliveryFee,
+      discount: discount ?? this.discount,
+      ownerId: ownerId ?? this.ownerId,
+    );
   }
 }

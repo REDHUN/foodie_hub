@@ -4,113 +4,124 @@ import 'package:foodiehub/services/menu_item_service.dart';
 
 class MenuItemProvider with ChangeNotifier {
   final MenuItemService _menuItemService = MenuItemService();
-  List<MenuItem> _menuItems = [];
+  final Map<String, List<MenuItem>> _menuItemsByRestaurant = {};
+  List<MenuItem> _allMenuItems = [];
   bool _isLoading = false;
   String? _error;
 
-  List<MenuItem> get menuItems => _menuItems;
+  List<MenuItem> get menuItems => _allMenuItems;
   bool get isLoading => _isLoading;
   String? get error => _error;
 
-  // Load all menu items from Firebase
-  Future<void> loadMenuItems() async {
-    _isLoading = true;
-    _error = null;
-    notifyListeners();
-
+  /// Load every menu item (uses collection group query)
+  Future<void> loadAllMenuItems() async {
+    _setLoading(true);
     try {
-      _menuItems = await _menuItemService.getMenuItems();
+      final items = await _menuItemService.getAllMenuItems();
+      _setMenuItems(items);
       _error = null;
     } catch (e) {
-      _error = 'Failed to load menu items: $e';
-      _menuItems = [];
+      _handleError('Failed to load menu items: $e');
     } finally {
-      _isLoading = false;
-      notifyListeners();
+      _setLoading(false);
     }
   }
 
-  // Load menu items by restaurant ID
-  Future<void> loadMenuItemsByRestaurant(String restaurantId) async {
-    _isLoading = true;
-    _error = null;
-    notifyListeners();
-
+  /// Load menu items for a specific restaurant
+  Future<void> loadMenuItemsForRestaurant(String restaurantId) async {
+    _setLoading(true);
     try {
-      _menuItems = await _menuItemService.getMenuItemsByRestaurant(restaurantId);
+      final items = await _menuItemService.getMenuItemsForRestaurant(restaurantId);
+      _menuItemsByRestaurant[restaurantId] = items;
+      _refreshAllMenuItems();
       _error = null;
-    } catch (e) {
-      _error = 'Failed to load menu items: $e';
-      _menuItems = [];
-    } finally {
-      _isLoading = false;
       notifyListeners();
+    } catch (e) {
+      _handleError('Failed to load menu items: $e');
+    } finally {
+      _setLoading(false);
     }
   }
 
-  // Load initial data if Firebase is empty
+  /// Load initial data from Firebase (with optional sample fallback)
   Future<void> initializeMenuItems() async {
-    // First, try to load from Firebase
-    await loadMenuItems();
-    
-    // If Firebase is empty, add sample data
-    if (_menuItems.isEmpty) {
+    await loadAllMenuItems();
+
+    if (_allMenuItems.isEmpty) {
       await _addSampleMenuItems();
     }
   }
 
   Future<void> _addSampleMenuItems() async {
-    // Add sample menu items to Firebase
-    // This is a one-time setup when Firebase is empty
-    // You can comment this out after initial setup
+    // Intentionally left empty. To add sample data, use Firebase migration.
   }
 
-  // Get menu items for a specific restaurant
   List<MenuItem> getMenuItemsByRestaurant(String restaurantId) {
-    return _menuItems.where((item) => item.restaurantId == restaurantId).toList();
+    return _menuItemsByRestaurant[restaurantId] ?? [];
   }
 
-  // Get menu item by ID
-  MenuItem? getMenuItemById(String id) {
+  MenuItem? getMenuItemById(String restaurantId, String id) {
     try {
-      return _menuItems.firstWhere((item) => item.id == id);
+      return getMenuItemsByRestaurant(restaurantId).firstWhere((item) => item.id == id);
     } catch (e) {
       return null;
     }
   }
 
-  // Get unique categories for a restaurant
   List<String> getCategoriesByRestaurant(String restaurantId) {
     final items = getMenuItemsByRestaurant(restaurantId);
     final categories = items.map((item) => item.category).toSet().toList();
+    categories.sort();
     return categories;
   }
 
-  // Add a new menu item
-  Future<bool> addMenuItem(MenuItem menuItem) async {
-    final success = await _menuItemService.addMenuItem(menuItem);
+  Future<bool> addMenuItem(String restaurantId, MenuItem menuItem) async {
+    final success = await _menuItemService.addMenuItem(restaurantId, menuItem);
     if (success) {
-      await loadMenuItems();
+      await loadMenuItemsForRestaurant(restaurantId);
     }
     return success;
   }
 
-  // Update a menu item
-  Future<bool> updateMenuItem(MenuItem menuItem) async {
-    final success = await _menuItemService.updateMenuItem(menuItem);
+  Future<bool> updateMenuItem(String restaurantId, MenuItem menuItem) async {
+    final success = await _menuItemService.updateMenuItem(restaurantId, menuItem);
     if (success) {
-      await loadMenuItems();
+      await loadMenuItemsForRestaurant(restaurantId);
     }
     return success;
   }
 
-  // Delete a menu item
-  Future<bool> deleteMenuItem(String id) async {
-    final success = await _menuItemService.deleteMenuItem(id);
+  Future<bool> deleteMenuItem(String restaurantId, String menuItemId) async {
+    final success = await _menuItemService.deleteMenuItem(restaurantId, menuItemId);
     if (success) {
-      await loadMenuItems();
+      await loadMenuItemsForRestaurant(restaurantId);
     }
     return success;
+  }
+
+  void _setMenuItems(List<MenuItem> items) {
+    _allMenuItems = items;
+    _menuItemsByRestaurant.clear();
+    for (final item in items) {
+      final list = _menuItemsByRestaurant[item.restaurantId] ?? [];
+      list.add(item);
+      _menuItemsByRestaurant[item.restaurantId] = list;
+    }
+    notifyListeners();
+  }
+
+  void _refreshAllMenuItems() {
+    _allMenuItems = _menuItemsByRestaurant.values.expand((items) => items).toList();
+  }
+
+  void _setLoading(bool value) {
+    _isLoading = value;
+    notifyListeners();
+  }
+
+  void _handleError(String message) {
+    _error = message;
+    notifyListeners();
   }
 }
 

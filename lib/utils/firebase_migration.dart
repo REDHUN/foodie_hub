@@ -1,3 +1,5 @@
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:foodiehub/models/menu_item.dart';
 import 'package:foodiehub/services/menu_item_service.dart';
 import 'package:foodiehub/services/restaurant_service.dart';
 import 'package:foodiehub/utils/constants.dart';
@@ -5,6 +7,7 @@ import 'package:foodiehub/utils/constants.dart';
 /// This script helps migrate sample data from constants.dart to Firebase
 /// Run this once to populate your Firebase database with initial data
 class FirebaseMigration {
+  final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
   final RestaurantService _restaurantService = RestaurantService();
   final MenuItemService _menuItemService = MenuItemService();
 
@@ -12,20 +15,73 @@ class FirebaseMigration {
   Future<void> migrateSampleData() async {
     print('Starting Firebase migration...');
     
-    // First, migrate restaurants
-    await _migrateRestaurants();
+    // Step 1: Create sample owner accounts
+    final ownerIds = await _migrateOwnerAccounts();
+
+    // Step 2: Migrate restaurants
+    await _migrateRestaurants(ownerIds);
     
-    // Then, migrate menu items
+    // Step 3: Migrate menu items
     await _migrateMenuItems();
     
     print('Firebase migration completed!');
   }
 
+  /// Create sample owner accounts and return map of restaurantId -> ownerId
+  Future<Map<String, String>> _migrateOwnerAccounts() async {
+    print('Creating sample owner accounts...');
+    final Map<String, String> ownerIds = {};
+
+    for (final account in sampleOwnerAccounts) {
+      try {
+        final credential = await _firebaseAuth.createUserWithEmailAndPassword(
+          email: account.email,
+          password: account.password,
+        );
+        final uid = credential.user?.uid;
+        if (uid != null) {
+          ownerIds[account.restaurantId] = uid;
+          print('✓ Created owner account: ${account.email}');
+        }
+      } on FirebaseAuthException catch (e) {
+        if (e.code == 'email-already-in-use') {
+          try {
+            final credential = await _firebaseAuth.signInWithEmailAndPassword(
+              email: account.email,
+              password: account.password,
+            );
+            final uid = credential.user?.uid;
+            if (uid != null) {
+              ownerIds[account.restaurantId] = uid;
+              print('• Owner account exists: ${account.email}');
+            }
+          } on FirebaseAuthException catch (signInError) {
+            print('✗ Failed to sign in existing owner ${account.email}: ${signInError.code}');
+          }
+        } else {
+          print('✗ Failed to create owner ${account.email}: ${e.code}');
+        }
+      } catch (e) {
+        print('✗ Unexpected error creating owner ${account.email}: $e');
+      } finally {
+        if (_firebaseAuth.currentUser != null) {
+          await _firebaseAuth.signOut();
+        }
+      }
+    }
+
+    return ownerIds;
+  }
+
   /// Migrate sample restaurants to Firebase
-  Future<void> _migrateRestaurants() async {
+  Future<void> _migrateRestaurants(Map<String, String> ownerIds) async {
     print('Migrating restaurants...');
     for (final restaurant in sampleRestaurants) {
-      final success = await _restaurantService.addRestaurant(restaurant);
+      final ownerId = ownerIds[restaurant.id];
+      final restaurantToAdd = ownerId != null
+          ? restaurant.copyWith(ownerId: ownerId)
+          : restaurant;
+      final success = await _restaurantService.addRestaurant(restaurantToAdd);
       if (success) {
         print('✓ Added restaurant: ${restaurant.name}');
       } else {
@@ -34,15 +90,25 @@ class FirebaseMigration {
     }
   }
 
-  /// Migrate sample menu items to Firebase
+  /// Migrate sample menu items to Firebase (stored under each restaurant)
   Future<void> _migrateMenuItems() async {
     print('Migrating menu items...');
+    final Map<String, List<MenuItem>> menuItemsByRestaurant = {};
+
     for (final menuItem in sampleMenuItems) {
-      final success = await _menuItemService.addMenuItem(menuItem);
-      if (success) {
-        print('✓ Added menu item: ${menuItem.name}');
-      } else {
-        print('✗ Failed to add menu item: ${menuItem.name}');
+      menuItemsByRestaurant.putIfAbsent(menuItem.restaurantId, () => []);
+      menuItemsByRestaurant[menuItem.restaurantId]!.add(menuItem);
+    }
+
+    for (final entry in menuItemsByRestaurant.entries) {
+      final restaurantId = entry.key;
+      for (final menuItem in entry.value) {
+        final success = await _menuItemService.addMenuItem(restaurantId, menuItem);
+        if (success) {
+          print('✓ Added menu item to $restaurantId: ${menuItem.name}');
+        } else {
+          print('✗ Failed to add menu item to $restaurantId: ${menuItem.name}');
+        }
       }
     }
   }
@@ -56,13 +122,7 @@ class FirebaseMigration {
     for (final restaurant in restaurants) {
       await _restaurantService.deleteRestaurant(restaurant.id);
     }
-    
-    // Get all menu items and delete them
-    final menuItems = await _menuItemService.getMenuItems();
-    for (final menuItem in menuItems) {
-      await _menuItemService.deleteMenuItem(menuItem.id);
-    }
-    
+
     print('All data cleared from Firebase');
   }
 }

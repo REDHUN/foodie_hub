@@ -32,7 +32,7 @@ class _FirebaseSetupScreenState extends State<FirebaseSetupScreen> {
 
   Future<void> _loadCounts() async {
     final restaurants = await _restaurantService.getRestaurants();
-    final menuItems = await _menuItemService.getMenuItems();
+    final menuItems = await _menuItemService.getAllMenuItems();
     setState(() {
       _restaurantCount = restaurants.length;
       _menuItemCount = menuItems.length;
@@ -65,7 +65,7 @@ class _FirebaseSetupScreenState extends State<FirebaseSetupScreen> {
       // Trigger providers to reload
       if (mounted) {
         await Provider.of<RestaurantProvider>(context, listen: false).loadRestaurants();
-        await Provider.of<MenuItemProvider>(context, listen: false).loadMenuItems();
+        await Provider.of<MenuItemProvider>(context, listen: false).loadAllMenuItems();
       }
     } catch (e) {
       setState(() {

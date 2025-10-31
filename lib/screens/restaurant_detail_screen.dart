@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:foodiehub/models/menu_item.dart';
 import 'package:foodiehub/models/restaurant.dart';
 import 'package:foodiehub/providers/menu_cart_provider.dart';
+import 'package:foodiehub/providers/menu_item_provider.dart';
 import 'package:foodiehub/screens/cart_screen.dart';
 import 'package:foodiehub/utils/constants.dart';
 import 'package:foodiehub/widgets/star_rating.dart';
@@ -19,10 +20,25 @@ class RestaurantDetailScreen extends StatefulWidget {
 
 class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<MenuItemProvider>(context, listen: false)
+          .loadMenuItemsForRestaurant(widget.restaurant.id);
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final menuItems = sampleMenuItems
+    final menuItemProvider = Provider.of<MenuItemProvider>(context);
+    final providerMenuItems =
+        menuItemProvider.getMenuItemsByRestaurant(widget.restaurant.id);
+    final fallbackMenuItems = sampleMenuItems
         .where((item) => item.restaurantId == widget.restaurant.id)
         .toList();
+    final menuItems = providerMenuItems.isNotEmpty
+        ? providerMenuItems
+        : (menuItemProvider.isLoading ? <MenuItem>[] : fallbackMenuItems);
 
     return Scaffold(
       body: Column(
@@ -37,7 +53,10 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
                     children: [
                       _buildRestaurantInfo(),
                       const SizedBox(height: 20),
-                      _buildMenuSection(menuItems),
+                      _buildMenuSection(
+                        menuItems,
+                        isLoading: menuItemProvider.isLoading,
+                      ),
                     ],
                   ),
                 ),
@@ -156,7 +175,16 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
     );
   }
 
-  Widget _buildMenuSection(List<MenuItem> menuItems) {
+  Widget _buildMenuSection(List<MenuItem> menuItems, {bool isLoading = false}) {
+    if (isLoading && menuItems.isEmpty) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(40),
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
     if (menuItems.isEmpty) {
       return const Center(
         child: Padding(

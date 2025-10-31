@@ -24,6 +24,13 @@ A beautiful and modern food delivery Flutter app converted from an HTML prototyp
 - **Real-time Totals**: See cart count and total price dynamically
 - **Cart Screen**: Dedicated cart screen with checkout functionality
 
+### Restaurant Owner Portal
+- **Email/Password Login**: Secure access for restaurant owners
+- **Restaurant Onboarding**: Sign-up flow creates a restaurant profile
+- **Menu Management**: Add or delete menu items in real time
+- **Owner Dashboard**: View restaurant details and live menu list
+- **Auth-aware UI**: Quick switch between consumer and owner experiences
+
 ### Firebase Integration 🔥
 - **Cloud Firestore**: Real-time data storage and synchronization
 - **Offline Support**: App works offline and syncs when connected
@@ -47,10 +54,23 @@ lib/
 │   ├── review.dart                    # Review data model
 │   └── cart_item.dart                 # Cart item model
 ├── providers/
-│   └── cart_provider.dart             # Cart state management
+│   ├── auth_provider.dart             # Firebase authentication state
+│   ├── cart_provider.dart             # Cart state management
+│   ├── menu_cart_provider.dart        # Menu cart state management
+│   ├── menu_item_provider.dart        # Menu items state
+│   ├── product_provider.dart          # Product catalog state
+│   └── restaurant_provider.dart       # Restaurants state
 ├── screens/
-│   ├── home_screen.dart               # Main product listing screen
-│   └── product_detail_screen.dart     # Product details page
+│   ├── new_home_screen.dart           # Consumer home screen
+│   ├── restaurant_detail_screen.dart  # Restaurant & menu detail
+│   ├── cart_screen.dart               # Cart management screen
+│   ├── owner_login_screen.dart        # Owner authentication
+│   ├── owner_dashboard_screen.dart    # Owner menu management
+│   └── firebase_setup_screen.dart     # Firebase migration helper
+├── services/
+│   ├── auth_service.dart              # Firebase Auth wrapper
+│   ├── menu_item_service.dart         # Menu CRUD (Firestore)
+│   └── restaurant_service.dart        # Restaurant CRUD (Firestore)
 ├── widgets/
 │   ├── product_card.dart              # Product card widget
 │   ├── star_rating.dart               # Star rating display
@@ -84,12 +104,37 @@ flutter pub get
 3. **Firebase Setup** (Required for full functionality):
    - See `FIREBASE_FIRST_STEPS.md` for quick setup
    - See `FIREBASE_SETUP.md` for detailed guide
+   - Enable **Email/Password** authentication in Firebase Console → Auth → Sign-in method
+   - (Optional) Run the Firebase setup screen to migrate sample data
    - App works with sample data if Firebase is not configured
 
 4. Run the app:
 ```bash
 flutter run
 ```
+
+### Restaurant Owner Accounts
+- Use the **Owner Login** button on the home screen to sign in or sign up
+- The sign-up flow automatically creates a restaurant document linked to the owner
+- Existing owners can log in to manage menu items from the dashboard
+- Default sample restaurants use placeholder owner IDs; create your own accounts for real usage
+- After running the Firebase setup migration, sample owner credentials are available:
+
+| Restaurant        | Email                     | Password     |
+|-------------------|---------------------------|--------------|
+| Pizza Hut         | owner1@foodiehub.com      | password123  |
+| Burger King       | owner2@foodiehub.com      | password123  |
+| Sushi Station     | owner3@foodiehub.com      | password123  |
+| La Pinoz Pizza    | owner4@foodiehub.com      | password123  |
+| The Bowl Company  | owner5@foodiehub.com      | password123  |
+| Noodle House      | owner6@foodiehub.com      | password123  |
+| Taco Bell         | owner7@foodiehub.com      | password123  |
+| Baskin Robbins    | owner8@foodiehub.com      | password123  |
+| Biryani Blues     | owner9@foodiehub.com      | password123  |
+| Dosa Plaza        | owner10@foodiehub.com     | password123  |
+| Curry House       | owner11@foodiehub.com     | password123  |
+
+> Running the Firebase setup migration signs out any currently logged-in Firebase Auth user in the app.
 
 ### Run on Specific Platform
 ```bash
@@ -185,9 +230,9 @@ The app includes 12 sample products:
 
 The app is fully integrated with Firebase for production-ready features:
 
-### Collections
-- **restaurants**: Restaurant information with images, ratings, and delivery details
-- **menuItems**: Menu items for each restaurant with categories and pricing
+### Firestore Structure
+- **restaurants** (collection): Restaurant information with images, ratings, delivery details, and `ownerId` for portal access
+- **menuItems** (subcollection): Menu items stored under each restaurant document, organized by category and pricing
 
 ### Features
 - Real-time data synchronization

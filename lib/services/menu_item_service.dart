@@ -3,43 +3,86 @@ import 'package:foodiehub/models/menu_item.dart';
 
 class MenuItemService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final String _collection = 'menuItems';
+  static const String _restaurantsCollection = 'restaurants';
+  static const String _menuSubcollection = 'menuItems';
 
-  // Get all menu items
-  Future<List<MenuItem>> getMenuItems() async {
+  CollectionReference<Map<String, dynamic>> _menuCollection(String restaurantId) {
+    return _firestore
+        .collection(_restaurantsCollection)
+        .doc(restaurantId)
+        .collection(_menuSubcollection);
+  }
+
+  /// Get all menu items across all restaurants (collection group query)
+  Future<List<MenuItem>> getAllMenuItems() async {
     try {
-      final QuerySnapshot snapshot = await _firestore.collection(_collection).get();
-      return snapshot.docs
-          .map((doc) => MenuItem.fromJson(doc.data() as Map<String, dynamic>))
-          .toList();
+      final QuerySnapshot<Map<String, dynamic>> snapshot =
+          await _firestore.collectionGroup(_menuSubcollection).get();
+
+      return snapshot.docs.map((doc) {
+        final data = doc.data();
+        data['id'] ??= doc.id;
+        data['restaurantId'] ??= doc.reference.parent.parent?.id ?? '';
+        return MenuItem.fromJson(data);
+      }).toList();
     } catch (e) {
-      print('Error getting menu items: $e');
+      print('Error getting all menu items: $e');
       return [];
     }
   }
 
-  // Get menu items by restaurant ID
-  Future<List<MenuItem>> getMenuItemsByRestaurant(String restaurantId) async {
+  /// Get menu items for a specific restaurant
+  Future<List<MenuItem>> getMenuItemsForRestaurant(String restaurantId) async {
     try {
-      final QuerySnapshot snapshot = await _firestore
-          .collection(_collection)
-          .where('restaurantId', isEqualTo: restaurantId)
+      final QuerySnapshot<Map<String, dynamic>> snapshot =
+          await _menuCollection(restaurantId).get();
+
+      return snapshot.docs.map((doc) {
+        final data = doc.data();
+        data['id'] ??= doc.id;
+        data['restaurantId'] = restaurantId;
+        return MenuItem.fromJson(data);
+      }).toList();
+    } catch (e) {
+      print('Error getting menu items for restaurant: $e');
+      return [];
+    }
+  }
+
+  /// Get menu items by category for a restaurant
+  Future<List<MenuItem>> getMenuItemsByCategory(
+    String restaurantId,
+    String category,
+  ) async {
+    try {
+      final QuerySnapshot<Map<String, dynamic>> snapshot = await _menuCollection(restaurantId)
+          .where('category', isEqualTo: category)
           .get();
-      return snapshot.docs
-          .map((doc) => MenuItem.fromJson(doc.data() as Map<String, dynamic>))
-          .toList();
+
+      return snapshot.docs.map((doc) {
+        final data = doc.data();
+        data['id'] ??= doc.id;
+        data['restaurantId'] = restaurantId;
+        return MenuItem.fromJson(data);
+      }).toList();
     } catch (e) {
-      print('Error getting menu items by restaurant: $e');
+      print('Error getting menu items by category: $e');
       return [];
     }
   }
 
-  // Get a single menu item by ID
-  Future<MenuItem?> getMenuItemById(String id) async {
+  /// Get a single menu item
+  Future<MenuItem?> getMenuItemById(String restaurantId, String menuItemId) async {
     try {
-      final DocumentSnapshot doc = await _firestore.collection(_collection).doc(id).get();
+      final DocumentSnapshot<Map<String, dynamic>> doc =
+          await _menuCollection(restaurantId).doc(menuItemId).get();
       if (doc.exists) {
-        return MenuItem.fromJson(doc.data() as Map<String, dynamic>);
+        final data = doc.data();
+        if (data != null) {
+          data['id'] ??= doc.id;
+          data['restaurantId'] = restaurantId;
+          return MenuItem.fromJson(data);
+        }
       }
       return null;
     } catch (e) {
@@ -48,32 +91,24 @@ class MenuItemService {
     }
   }
 
-  // Stream of menu items for real-time updates
-  Stream<List<MenuItem>> getMenuItemsStream() {
-    return _firestore.collection(_collection).snapshots().map((snapshot) {
-      return snapshot.docs
-          .map((doc) => MenuItem.fromJson(doc.data() as Map<String, dynamic>))
-          .toList();
+  /// Stream menu items for a restaurant
+  Stream<List<MenuItem>> getMenuItemsStream(String restaurantId) {
+    return _menuCollection(restaurantId).snapshots().map((snapshot) {
+      return snapshot.docs.map((doc) {
+        final data = doc.data();
+        data['id'] ??= doc.id;
+        data['restaurantId'] = restaurantId;
+        return MenuItem.fromJson(data);
+      }).toList();
     });
   }
 
-  // Stream of menu items by restaurant ID for real-time updates
-  Stream<List<MenuItem>> getMenuItemsByRestaurantStream(String restaurantId) {
-    return _firestore
-        .collection(_collection)
-        .where('restaurantId', isEqualTo: restaurantId)
-        .snapshots()
-        .map((snapshot) {
-      return snapshot.docs
-          .map((doc) => MenuItem.fromJson(doc.data() as Map<String, dynamic>))
-          .toList();
-    });
-  }
-
-  // Add a new menu item
-  Future<bool> addMenuItem(MenuItem menuItem) async {
+  /// Add a menu item under a restaurant
+  Future<bool> addMenuItem(String restaurantId, MenuItem menuItem) async {
     try {
-      await _firestore.collection(_collection).doc(menuItem.id).set(menuItem.toJson());
+      final data = menuItem.toJson();
+      data['restaurantId'] = restaurantId;
+      await _menuCollection(restaurantId).doc(menuItem.id).set(data);
       return true;
     } catch (e) {
       print('Error adding menu item: $e');
@@ -81,10 +116,12 @@ class MenuItemService {
     }
   }
 
-  // Update a menu item
-  Future<bool> updateMenuItem(MenuItem menuItem) async {
+  /// Update a menu item under a restaurant
+  Future<bool> updateMenuItem(String restaurantId, MenuItem menuItem) async {
     try {
-      await _firestore.collection(_collection).doc(menuItem.id).update(menuItem.toJson());
+      final data = menuItem.toJson();
+      data['restaurantId'] = restaurantId;
+      await _menuCollection(restaurantId).doc(menuItem.id).update(data);
       return true;
     } catch (e) {
       print('Error updating menu item: $e');
@@ -92,10 +129,10 @@ class MenuItemService {
     }
   }
 
-  // Delete a menu item
-  Future<bool> deleteMenuItem(String id) async {
+  /// Delete a menu item from a restaurant
+  Future<bool> deleteMenuItem(String restaurantId, String menuItemId) async {
     try {
-      await _firestore.collection(_collection).doc(id).delete();
+      await _menuCollection(restaurantId).doc(menuItemId).delete();
       return true;
     } catch (e) {
       print('Error deleting menu item: $e');
@@ -103,21 +140,16 @@ class MenuItemService {
     }
   }
 
-  // Get menu items by category
-  Future<List<MenuItem>> getMenuItemsByCategory(String restaurantId, String category) async {
-    try {
-      final QuerySnapshot snapshot = await _firestore
-          .collection(_collection)
-          .where('restaurantId', isEqualTo: restaurantId)
-          .where('category', isEqualTo: category)
-          .get();
-      return snapshot.docs
-          .map((doc) => MenuItem.fromJson(doc.data() as Map<String, dynamic>))
-          .toList();
-    } catch (e) {
-      print('Error getting menu items by category: $e');
-      return [];
+  /// Delete all menu items for a restaurant (used when clearing data)
+  Future<void> deleteMenuItemsForRestaurant(String restaurantId) async {
+    final snapshot = await _menuCollection(restaurantId).get();
+    final WriteBatch batch = _firestore.batch();
+
+    for (final doc in snapshot.docs) {
+      batch.delete(doc.reference);
     }
+
+    await batch.commit();
   }
 }
 
