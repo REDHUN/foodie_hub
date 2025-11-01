@@ -9,6 +9,7 @@ import 'package:foodiehub/providers/menu_item_provider.dart';
 import 'package:foodiehub/providers/product_provider.dart';
 import 'package:foodiehub/providers/restaurant_provider.dart';
 import 'package:foodiehub/screens/new_home_screen.dart';
+import 'package:foodiehub/screens/splash_screen.dart';
 import 'package:foodiehub/utils/constants.dart';
 import 'package:provider/provider.dart';
 
@@ -57,7 +58,7 @@ class MyApp extends StatelessWidget {
             ),
           ),
         ),
-        home: const MainScreen(),
+        home: const SplashScreen(),
       ),
     );
   }

@@ -235,10 +235,12 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
   }
 
   Widget _buildRestaurantCard(Restaurant restaurant) {
-    return Card(
-      elevation: 2,
-      color: Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey[200]!),
+      ),
+
       child: Column(
         children: [
           ClipRRect(
@@ -329,9 +331,13 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
   }
 
   Widget _buildMenuItemTile(MenuItem item) {
-    return Card(
-      color: Colors.white,
-      margin: const EdgeInsets.symmetric(vertical: 8),
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+
+        border: Border.all(color: Colors.grey[200]!),
+      ),
+      margin: const EdgeInsets.symmetric(vertical: 4),
       child: ListTile(
         leading: ClipRRect(
           borderRadius: BorderRadius.circular(8),
@@ -523,6 +529,7 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
       context: context,
       builder: (context) {
         return AlertDialog(
+          backgroundColor: Colors.white,
           title: const Text('Delete Menu Item'),
           content: Text('Are you sure you want to delete "${item.name}"?'),
           actions: [

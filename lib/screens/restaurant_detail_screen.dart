@@ -23,16 +23,19 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<MenuItemProvider>(context, listen: false)
-          .loadMenuItemsForRestaurant(widget.restaurant.id);
+      Provider.of<MenuItemProvider>(
+        context,
+        listen: false,
+      ).loadMenuItemsForRestaurant(widget.restaurant.id);
     });
   }
 
   @override
   Widget build(BuildContext context) {
     final menuItemProvider = Provider.of<MenuItemProvider>(context);
-    final providerMenuItems =
-        menuItemProvider.getMenuItemsByRestaurant(widget.restaurant.id);
+    final providerMenuItems = menuItemProvider.getMenuItemsByRestaurant(
+      widget.restaurant.id,
+    );
     final fallbackMenuItems = sampleMenuItems
         .where((item) => item.restaurantId == widget.restaurant.id)
         .toList();
@@ -52,7 +55,7 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       _buildRestaurantInfo(),
-                      const SizedBox(height: 20),
+
                       _buildMenuSection(
                         menuItems,
                         isLoading: menuItemProvider.isLoading,
@@ -198,6 +201,7 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
     }
 
     return ListView.builder(
+      padding: EdgeInsets.zero,
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       itemCount: menuItems.length,
@@ -209,11 +213,15 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
 
   Widget _buildMenuItemCard(MenuItem item) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-      child: Card(
-        color: Colors.white,
-        elevation: 1,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 1),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 5),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+
+          border: Border.all(color: Colors.grey[200]!),
+        ),
+
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
