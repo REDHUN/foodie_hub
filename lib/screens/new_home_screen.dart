@@ -5,9 +5,11 @@ import 'package:foodiehub/providers/auth_provider.dart';
 import 'package:foodiehub/providers/menu_cart_provider.dart';
 import 'package:foodiehub/providers/restaurant_provider.dart';
 import 'package:foodiehub/screens/cart_screen.dart';
+import 'package:foodiehub/screens/category_restaurants_screen.dart';
 import 'package:foodiehub/screens/owner_dashboard_screen.dart';
 import 'package:foodiehub/screens/owner_login_screen.dart';
 import 'package:foodiehub/screens/restaurant_detail_screen.dart';
+import 'package:foodiehub/screens/search_screen.dart';
 import 'package:foodiehub/utils/constants.dart';
 import 'package:foodiehub/widgets/star_rating.dart';
 import 'package:provider/provider.dart';
@@ -20,17 +22,30 @@ class NewHomeScreen extends StatefulWidget {
 }
 
 class _NewHomeScreenState extends State<NewHomeScreen> {
+  // Filter state variables
+  String _selectedSortBy = 'Relevance';
+  bool _showOffersOnly = false;
+  double _minRating = 0.0;
+  double _maxPrice = 1000.0;
+  bool _fastDeliveryOnly = false;
+
   @override
   void initState() {
     super.initState();
     // Load restaurants from Firebase on init
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<RestaurantProvider>(context, listen: false).initializeRestaurants();
+      Provider.of<RestaurantProvider>(
+        context,
+        listen: false,
+      ).initializeRestaurants();
     });
   }
 
   Future<void> _refreshData() async {
-    await Provider.of<RestaurantProvider>(context, listen: false).loadRestaurants();
+    await Provider.of<RestaurantProvider>(
+      context,
+      listen: false,
+    ).loadRestaurants();
   }
 
   String _getOwnerInitials(String? email) {
@@ -42,6 +57,13 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
       return localPart.substring(0, 2).toUpperCase();
     }
     return localPart.toUpperCase();
+  }
+
+  void _navigateToSearch() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const SearchScreen()),
+    );
   }
 
   @override
@@ -109,7 +131,7 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
                   ],
                 ),
                 Text(
-                  'Koramangala, Bangalore',
+                  'Muhamma, Alappuzha',
                   style: TextStyle(fontSize: 14, color: Colors.grey),
                 ),
               ],
@@ -224,21 +246,38 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
   Widget _buildSearchBar(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          color: Colors.grey[100],
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Row(
-          children: [
-            Icon(Icons.search, color: Colors.grey[600]),
-            const SizedBox(width: 12),
-            Text(
-              'Search for restaurants and food',
-              style: TextStyle(color: Colors.grey[600], fontSize: 14),
-            ),
-          ],
+      child: GestureDetector(
+        onTap: _navigateToSearch,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.grey.withValues(alpha: 0.1),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.search, color: Colors.grey[600], size: 20),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'Search for restaurants and food',
+                  style: TextStyle(
+                    color: Colors.grey[600],
+                    fontSize: 16,
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+              ),
+              Icon(Icons.mic, color: Colors.grey[400], size: 20),
+            ],
+          ),
         ),
       ),
     );
@@ -257,16 +296,59 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
         ),
         const SizedBox(height: 12),
         SizedBox(
-          height: 100,
+          height: 120,
           child: ListView(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 16),
             children: [
-              _buildCategoryItem('Biryani', Icons.rice_bowl),
-              _buildCategoryItem('Pizza', Icons.local_pizza),
-              _buildCategoryItem('Burgers', Icons.lunch_dining),
-              _buildCategoryItem('Cakes', Icons.cake),
-              _buildCategoryItem('Chinese', Icons.restaurant),
+              _buildCategoryItem(
+                'Biryani',
+                'https://images.unsplash.com/photo-1563379091339-03246963d51a?w=200',
+                const Color(0xFFFF6B6B),
+                'Biryani',
+              ),
+              _buildCategoryItem(
+                'Pizza',
+                'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=200',
+                const Color(0xFFFFD93D),
+                'Pizza',
+              ),
+              _buildCategoryItem(
+                'Burgers',
+                'https://images.unsplash.com/photo-1571091718767-18b5b1457add?w=200',
+                const Color(0xFF6BCF7F),
+                'Burgers',
+              ),
+              _buildCategoryItem(
+                'Desserts',
+                'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=200',
+                const Color(0xFFFF8A65),
+                'Desserts',
+              ),
+              _buildCategoryItem(
+                'Chinese',
+                'https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?w=200',
+                const Color(0xFF4ECDC4),
+                'Chinese',
+              ),
+              _buildCategoryItem(
+                'Sushi',
+                'https://images.unsplash.com/photo-1579584425555-c3ce17fd4351?w=200',
+                const Color(0xFF45B7D1),
+                'Sushi',
+              ),
+              _buildCategoryItem(
+                'Ice Cream',
+                'https://images.unsplash.com/photo-1567206563064-6f60f40a2b57?w=200',
+                const Color(0xFFBA68C8),
+                'Ice Cream',
+              ),
+              _buildCategoryItem(
+                'Coffee',
+                'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=200',
+                const Color(0xFF8D6E63),
+                'Coffee',
+              ),
             ],
           ),
         ),
@@ -274,25 +356,199 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
     );
   }
 
-  Widget _buildCategoryItem(String name, IconData icon) {
+  Widget _buildCategoryItem(
+    String name,
+    String imageUrl,
+    Color backgroundColor,
+    String cuisine,
+  ) {
     return Padding(
       padding: const EdgeInsets.only(right: 16.0),
-      child: Column(
-        children: [
-          Container(
-            width: 70,
-            height: 70,
-            decoration: BoxDecoration(
-              color: Colors.grey[100],
-              borderRadius: BorderRadius.circular(8),
+      child: GestureDetector(
+        onTap: () => _navigateToCategoryRestaurants(cuisine),
+        child: Column(
+          children: [
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                color: backgroundColor.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: backgroundColor.withValues(alpha: 0.3),
+                  width: 1,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: backgroundColor.withValues(alpha: 0.2),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Stack(
+                  children: [
+                    Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            backgroundColor.withValues(alpha: 0.8),
+                            backgroundColor.withValues(alpha: 0.6),
+                          ],
+                        ),
+                      ),
+                    ),
+                    CachedNetworkImage(
+                      imageUrl: imageUrl,
+                      width: 80,
+                      height: 80,
+                      fit: BoxFit.cover,
+                      placeholder: (context, url) => Container(
+                        width: 80,
+                        height: 80,
+                        decoration: BoxDecoration(
+                          color: backgroundColor.withValues(alpha: 0.3),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(
+                          _getCategoryIcon(name),
+                          size: 32,
+                          color: backgroundColor,
+                        ),
+                      ),
+                      errorWidget: (context, url, error) => Container(
+                        width: 80,
+                        height: 80,
+                        decoration: BoxDecoration(
+                          color: backgroundColor.withValues(alpha: 0.3),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(
+                          _getCategoryIcon(name),
+                          size: 32,
+                          color: backgroundColor,
+                        ),
+                      ),
+                    ),
+                    Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.transparent,
+                            Colors.black.withValues(alpha: 0.3),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
-            child: Icon(icon, size: 32, color: Colors.grey[700]),
-          ),
-          const SizedBox(height: 8),
-          Text(name, style: const TextStyle(fontSize: 12)),
-        ],
+            const SizedBox(height: 8),
+            Text(
+              name,
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: Colors.black87,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
       ),
     );
+  }
+
+  IconData _getCategoryIcon(String category) {
+    switch (category.toLowerCase()) {
+      case 'biryani':
+        return Icons.rice_bowl;
+      case 'pizza':
+        return Icons.local_pizza;
+      case 'burgers':
+        return Icons.lunch_dining;
+      case 'desserts':
+        return Icons.cake;
+      case 'chinese':
+        return Icons.restaurant;
+      case 'sushi':
+        return Icons.set_meal;
+      case 'ice cream':
+        return Icons.icecream;
+      case 'coffee':
+        return Icons.coffee;
+      default:
+        return Icons.restaurant;
+    }
+  }
+
+  void _navigateToCategoryRestaurants(String cuisine) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => CategoryRestaurantsScreen(
+          category: cuisine,
+          restaurants: _getRestaurantsByCategory(cuisine),
+        ),
+      ),
+    );
+  }
+
+  List<Restaurant> _getRestaurantsByCategory(String category) {
+    final restaurantProvider = Provider.of<RestaurantProvider>(
+      context,
+      listen: false,
+    );
+    final allRestaurants = restaurantProvider.restaurants.isNotEmpty
+        ? restaurantProvider.restaurants
+        : sampleRestaurants;
+
+    return allRestaurants.where((restaurant) {
+      final cuisine = restaurant.cuisine.toLowerCase();
+      final categoryLower = category.toLowerCase();
+
+      // Enhanced matching logic for better category filtering
+      switch (categoryLower) {
+        case 'biryani':
+          return cuisine.contains('biryani') ||
+              cuisine.contains('mughlai') ||
+              cuisine.contains('persian');
+        case 'pizza':
+          return cuisine.contains('pizza') || cuisine.contains('italian');
+        case 'burgers':
+          return cuisine.contains('burger') ||
+              cuisine.contains('american') ||
+              cuisine.contains('fast food');
+        case 'desserts':
+          return cuisine.contains('dessert') ||
+              cuisine.contains('cake') ||
+              cuisine.contains('ice cream') ||
+              cuisine.contains('sweet') ||
+              cuisine.contains('bakery');
+        case 'chinese':
+          return cuisine.contains('chinese') ||
+              cuisine.contains('noodles') ||
+              cuisine.contains('asian');
+        case 'sushi':
+          return cuisine.contains('sushi') || cuisine.contains('japanese');
+        case 'ice cream':
+          return cuisine.contains('ice cream') || cuisine.contains('dessert');
+        case 'coffee':
+          return cuisine.contains('coffee') ||
+              cuisine.contains('beverages') ||
+              cuisine.contains('cafe');
+        default:
+          return cuisine.contains(categoryLower);
+      }
+    }).toList();
   }
 
   Widget _buildTopRatedSection(BuildContext context) {
@@ -304,27 +560,27 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
         final topRestaurants = restaurants.take(3).toList();
 
         return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16.0),
-          child: Text(
-            'Top-rated near you',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-        ),
-        const SizedBox(height: 12),
-        SizedBox(
-          height: 240,
-          child: ListView(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            children: topRestaurants.map((restaurant) {
-              return _buildRestaurantCard(context, restaurant);
-            }).toList(),
-          ),
-        ),
-      ],
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16.0),
+              child: Text(
+                'Top-rated near you',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              height: 240,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                children: topRestaurants.map((restaurant) {
+                  return _buildRestaurantCard(context, restaurant);
+                }).toList(),
+              ),
+            ),
+          ],
         );
       },
     );
@@ -333,9 +589,12 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
   Widget _buildAllRestaurantsSection(BuildContext context) {
     return Consumer<RestaurantProvider>(
       builder: (context, restaurantProvider, child) {
-        final restaurants = restaurantProvider.restaurants.isNotEmpty
+        final allRestaurants = restaurantProvider.restaurants.isNotEmpty
             ? restaurantProvider.restaurants
             : sampleRestaurants;
+
+        // Apply filters
+        final filteredRestaurants = _applyFilters(allRestaurants);
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -358,23 +617,18 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
               ),
             ),
             const SizedBox(height: 12),
+            // Filter Chips
+            _buildFilterChips(),
+            const SizedBox(height: 12),
+            // Results counter
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: SizedBox(
-                height: 36,
-                child: ListView(
-                  scrollDirection: Axis.horizontal,
-                  children: [
-                    _buildFilterButton('Filter'),
-                    const SizedBox(width: 8),
-                    _buildFilterButton('Sort By'),
-                    const SizedBox(width: 8),
-                    _buildFilterButton('Fast Delivery'),
-                    const SizedBox(width: 8),
-                    _buildFilterButton('New on Swiggy'),
-                    const SizedBox(width: 8),
-                    _buildFilterButton('Ratings'),
-                  ],
+              child: Text(
+                '${filteredRestaurants.length} restaurants found',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey[600],
+                  fontWeight: FontWeight.w500,
                 ),
               ),
             ),
@@ -384,11 +638,11 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
               child: ListView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
-                itemCount: restaurants.length,
+                itemCount: filteredRestaurants.length,
                 itemBuilder: (context, index) {
                   return _buildFullRestaurantCard(
                     context,
-                    restaurants[index],
+                    filteredRestaurants[index],
                   );
                 },
               ),
@@ -399,14 +653,244 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
     );
   }
 
-  Widget _buildFilterButton(String label) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-      decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey[300]!),
-        borderRadius: BorderRadius.circular(20),
+  Widget _buildFilterChips() {
+    final hasActiveFilters =
+        _selectedSortBy != 'Relevance' ||
+        _showOffersOnly ||
+        _minRating > 0 ||
+        _maxPrice < 1000 ||
+        _fastDeliveryOnly;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      child: SizedBox(
+        height: 40,
+        child: ListView(
+          scrollDirection: Axis.horizontal,
+          children: [
+            _buildSortByChip(),
+            const SizedBox(width: 8),
+            _buildOffersChip(),
+            const SizedBox(width: 8),
+            _buildRatingsChip(),
+            const SizedBox(width: 8),
+            _buildPriceRangeChip(),
+            const SizedBox(width: 8),
+            _buildFastDeliveryChip(),
+            if (hasActiveFilters) ...[
+              const SizedBox(width: 8),
+              _buildClearAllChip(),
+            ],
+          ],
+        ),
       ),
-      child: Text(label, style: const TextStyle(fontSize: 12)),
+    );
+  }
+
+  Widget _buildSortByChip() {
+    return GestureDetector(
+      onTap: () => _showSortByBottomSheet(),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.grey[300]!),
+          borderRadius: BorderRadius.circular(20),
+          color: _selectedSortBy != 'Relevance'
+              ? AppColors.primaryColor.withValues(alpha: 0.1)
+              : Colors.white,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Sort By',
+              style: TextStyle(
+                fontSize: 12,
+                color: _selectedSortBy != 'Relevance'
+                    ? AppColors.primaryColor
+                    : Colors.black,
+                fontWeight: _selectedSortBy != 'Relevance'
+                    ? FontWeight.w600
+                    : FontWeight.normal,
+              ),
+            ),
+            const SizedBox(width: 4),
+            Icon(
+              Icons.keyboard_arrow_down,
+              size: 16,
+              color: _selectedSortBy != 'Relevance'
+                  ? AppColors.primaryColor
+                  : Colors.grey,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildOffersChip() {
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _showOffersOnly = !_showOffersOnly;
+        });
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+        decoration: BoxDecoration(
+          border: Border.all(
+            color: _showOffersOnly ? AppColors.primaryColor : Colors.grey[300]!,
+          ),
+          borderRadius: BorderRadius.circular(20),
+          color: _showOffersOnly
+              ? AppColors.primaryColor.withValues(alpha: 0.1)
+              : Colors.white,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.local_offer,
+              size: 14,
+              color: _showOffersOnly ? AppColors.primaryColor : Colors.grey,
+            ),
+            const SizedBox(width: 4),
+            Text(
+              'Offers',
+              style: TextStyle(
+                fontSize: 12,
+                color: _showOffersOnly ? AppColors.primaryColor : Colors.black,
+                fontWeight: _showOffersOnly
+                    ? FontWeight.w600
+                    : FontWeight.normal,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRatingsChip() {
+    return GestureDetector(
+      onTap: () => _showRatingsBottomSheet(),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+        decoration: BoxDecoration(
+          border: Border.all(
+            color: _minRating > 0 ? AppColors.primaryColor : Colors.grey[300]!,
+          ),
+          borderRadius: BorderRadius.circular(20),
+          color: _minRating > 0
+              ? AppColors.primaryColor.withValues(alpha: 0.1)
+              : Colors.white,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.star,
+              size: 14,
+              color: _minRating > 0 ? AppColors.primaryColor : Colors.grey,
+            ),
+            const SizedBox(width: 4),
+            Text(
+              _minRating > 0
+                  ? 'Ratings ${_minRating.toStringAsFixed(1)}+'
+                  : 'Ratings',
+              style: TextStyle(
+                fontSize: 12,
+                color: _minRating > 0 ? AppColors.primaryColor : Colors.black,
+                fontWeight: _minRating > 0
+                    ? FontWeight.w600
+                    : FontWeight.normal,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPriceRangeChip() {
+    return GestureDetector(
+      onTap: () => _showPriceRangeBottomSheet(),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+        decoration: BoxDecoration(
+          border: Border.all(
+            color: _maxPrice < 1000
+                ? AppColors.primaryColor
+                : Colors.grey[300]!,
+          ),
+          borderRadius: BorderRadius.circular(20),
+          color: _maxPrice < 1000
+              ? AppColors.primaryColor.withValues(alpha: 0.1)
+              : Colors.white,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              _maxPrice < 1000 ? 'Rs. 0-${_maxPrice.toInt()}' : 'Rs. 0-1000+',
+              style: TextStyle(
+                fontSize: 12,
+                color: _maxPrice < 1000 ? AppColors.primaryColor : Colors.black,
+                fontWeight: _maxPrice < 1000
+                    ? FontWeight.w600
+                    : FontWeight.normal,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFastDeliveryChip() {
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _fastDeliveryOnly = !_fastDeliveryOnly;
+        });
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+        decoration: BoxDecoration(
+          border: Border.all(
+            color: _fastDeliveryOnly
+                ? AppColors.primaryColor
+                : Colors.grey[300]!,
+          ),
+          borderRadius: BorderRadius.circular(20),
+          color: _fastDeliveryOnly
+              ? AppColors.primaryColor.withValues(alpha: 0.1)
+              : Colors.white,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.flash_on,
+              size: 14,
+              color: _fastDeliveryOnly ? AppColors.primaryColor : Colors.grey,
+            ),
+            const SizedBox(width: 4),
+            Text(
+              'Fast Delivery',
+              style: TextStyle(
+                fontSize: 12,
+                color: _fastDeliveryOnly
+                    ? AppColors.primaryColor
+                    : Colors.black,
+                fontWeight: _fastDeliveryOnly
+                    ? FontWeight.w600
+                    : FontWeight.normal,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -639,6 +1123,228 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildClearAllChip() {
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _selectedSortBy = 'Relevance';
+          _showOffersOnly = false;
+          _minRating = 0.0;
+          _maxPrice = 1000.0;
+          _fastDeliveryOnly = false;
+        });
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.red[300]!),
+          borderRadius: BorderRadius.circular(20),
+          color: Colors.red[50],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.clear, size: 14, color: Colors.red[600]),
+            const SizedBox(width: 4),
+            Text(
+              'Clear All',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.red[600],
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Filter logic
+  List<Restaurant> _applyFilters(List<Restaurant> restaurants) {
+    List<Restaurant> filtered = List.from(restaurants);
+
+    // Apply offers filter
+    if (_showOffersOnly) {
+      filtered = filtered
+          .where((r) => r.discount != null && r.discount!.isNotEmpty)
+          .toList();
+    }
+
+    // Apply rating filter
+    if (_minRating > 0) {
+      filtered = filtered.where((r) => r.rating >= _minRating).toList();
+    }
+
+    // Apply fast delivery filter (assuming delivery time <= 25 mins is fast)
+    if (_fastDeliveryOnly) {
+      filtered = filtered.where((r) {
+        final timeString = r.deliveryTime.replaceAll(RegExp(r'[^0-9]'), '');
+        final time = int.tryParse(timeString) ?? 60;
+        return time <= 25;
+      }).toList();
+    }
+
+    // Apply sorting
+    switch (_selectedSortBy) {
+      case 'Rating: High to Low':
+        filtered.sort((a, b) => b.rating.compareTo(a.rating));
+        break;
+      case 'Delivery Time':
+        filtered.sort((a, b) {
+          final timeA =
+              int.tryParse(a.deliveryTime.replaceAll(RegExp(r'[^0-9]'), '')) ??
+              60;
+          final timeB =
+              int.tryParse(b.deliveryTime.replaceAll(RegExp(r'[^0-9]'), '')) ??
+              60;
+          return timeA.compareTo(timeB);
+        });
+        break;
+      case 'Cost: Low to High':
+        filtered.sort((a, b) => a.deliveryFee.compareTo(b.deliveryFee));
+        break;
+      case 'Cost: High to Low':
+        filtered.sort((a, b) => b.deliveryFee.compareTo(a.deliveryFee));
+        break;
+      default:
+        // Keep original order for 'Relevance'
+        break;
+    }
+
+    return filtered;
+  }
+
+  // Bottom sheet methods
+  void _showSortByBottomSheet() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Sort By',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 16),
+              ...[
+                'Relevance',
+                'Rating: High to Low',
+                'Delivery Time',
+                'Cost: Low to High',
+                'Cost: High to Low',
+              ].map(
+                (option) => ListTile(
+                  title: Text(option),
+                  trailing: _selectedSortBy == option
+                      ? const Icon(Icons.check, color: AppColors.primaryColor)
+                      : null,
+                  onTap: () {
+                    setState(() {
+                      _selectedSortBy = option;
+                    });
+                    Navigator.pop(context);
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _showRatingsBottomSheet() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Filter by Rating',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 16),
+              ...[0.0, 3.0, 3.5, 4.0, 4.5].map(
+                (rating) => ListTile(
+                  title: Text(
+                    rating == 0.0
+                        ? 'Any Rating'
+                        : '${rating.toStringAsFixed(1)}+ Stars',
+                  ),
+                  trailing: _minRating == rating
+                      ? const Icon(Icons.check, color: AppColors.primaryColor)
+                      : null,
+                  onTap: () {
+                    setState(() {
+                      _minRating = rating;
+                    });
+                    Navigator.pop(context);
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _showPriceRangeBottomSheet() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Price Range',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 16),
+              ...[1000.0, 300.0, 500.0, 700.0].map(
+                (price) => ListTile(
+                  title: Text(
+                    price == 1000.0 ? 'Rs. 0-1000+' : 'Rs. 0-${price.toInt()}',
+                  ),
+                  trailing: _maxPrice == price
+                      ? const Icon(Icons.check, color: AppColors.primaryColor)
+                      : null,
+                  onTap: () {
+                    setState(() {
+                      _maxPrice = price;
+                    });
+                    Navigator.pop(context);
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }
