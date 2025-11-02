@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:foodiehub/models/restaurant.dart';
 import 'package:foodiehub/providers/auth_provider.dart';
+import 'package:foodiehub/providers/menu_cart_provider.dart';
 import 'package:foodiehub/screens/owner_dashboard_screen.dart';
 import 'package:foodiehub/services/restaurant_service.dart';
 import 'package:foodiehub/widgets/animated_header.dart';
@@ -78,6 +79,11 @@ class _OwnerLoginScreenState extends State<OwnerLoginScreen> {
       }
 
       if (!mounted) return;
+
+      // Load cart after successful login
+      final cartProvider = context.read<MenuCartProvider>();
+      await cartProvider.loadCartAfterLogin();
+
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => const OwnerDashboardScreen()),

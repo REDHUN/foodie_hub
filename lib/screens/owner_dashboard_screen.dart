@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:foodiehub/models/menu_item.dart';
 import 'package:foodiehub/models/restaurant.dart';
 import 'package:foodiehub/providers/auth_provider.dart';
+import 'package:foodiehub/providers/menu_cart_provider.dart';
 import 'package:foodiehub/providers/menu_item_provider.dart';
 import 'package:foodiehub/services/restaurant_service.dart';
 import 'package:foodiehub/utils/constants.dart';
@@ -102,8 +103,11 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
 
   Future<void> _handleSignOut() async {
     final authProvider = context.read<AuthProvider>();
+    final cartProvider = context.read<MenuCartProvider>();
     try {
       await authProvider.signOut();
+      // Clear cart when restaurant owner logs out
+      cartProvider.clearCartOnLogout();
       if (!mounted) return;
       Navigator.of(context).pop();
     } catch (e) {

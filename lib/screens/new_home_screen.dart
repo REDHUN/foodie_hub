@@ -409,6 +409,59 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
               );
             },
           ),
+          const SizedBox(width: 8),
+          // Cart sync status indicator
+          Consumer<MenuCartProvider>(
+            builder: (context, cart, child) {
+              return GestureDetector(
+                onTap: () async {
+                  if (cart.isOwnerLoggedIn) {
+                    HapticFeedback.lightImpact();
+                    await cart.refreshCartFromFirebase();
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'Cart refreshed from restaurant cloud! 🛒☁️',
+                          ),
+                          duration: Duration(seconds: 2),
+                          backgroundColor: AppColors.successColor,
+                        ),
+                      );
+                    }
+                  }
+                },
+                onLongPress: () async {
+                  // Debug: Force load cart and show state
+                  HapticFeedback.heavyImpact();
+                  await cart.forceLoadCartFromFirebase();
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          'Force Load: ${cart.items.length} items, Owner: ${cart.isOwnerLoggedIn}',
+                        ),
+                        duration: const Duration(seconds: 3),
+                        backgroundColor: Colors.blue,
+                      ),
+                    );
+                  }
+                },
+                child: Tooltip(
+                  message: cart.isOwnerLoggedIn
+                      ? 'Tap to refresh cart from restaurant cloud'
+                      : 'Cart local only - login as restaurant owner to sync',
+                  child: Icon(
+                    cart.isOwnerLoggedIn ? Icons.cloud_done : Icons.cloud_off,
+                    color: cart.isOwnerLoggedIn
+                        ? AppColors.successColor
+                        : Colors.grey,
+                    size: 20,
+                  ),
+                ),
+              );
+            },
+          ),
           const SizedBox(width: 12),
           GestureDetector(
             onTap: () {

@@ -53,6 +53,63 @@ class _CartScreenState extends State<CartScreen> {
           ),
         ),
         centerTitle: false,
+        actions: [
+          Consumer<MenuCartProvider>(
+            builder: (context, cart, child) {
+              return IconButton(
+                icon: cart.isLoading
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: AppColors.primaryColor,
+                        ),
+                      )
+                    : Icon(
+                        cart.isOwnerLoggedIn
+                            ? Icons.cloud_done
+                            : Icons.cloud_off,
+                        color: cart.isOwnerLoggedIn
+                            ? AppColors.successColor
+                            : Colors.grey,
+                      ),
+                onPressed: cart.isLoading
+                    ? null
+                    : () async {
+                        HapticFeedback.lightImpact();
+                        if (cart.isOwnerLoggedIn) {
+                          await cart.syncWithFirebase();
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  'Cart synced to restaurant cloud! ☁️',
+                                ),
+                                duration: Duration(seconds: 2),
+                                backgroundColor: AppColors.successColor,
+                              ),
+                            );
+                          }
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'Please login as restaurant owner to sync cart',
+                              ),
+                              duration: Duration(seconds: 3),
+                              backgroundColor: Colors.orange,
+                            ),
+                          );
+                        }
+                      },
+                tooltip: cart.isOwnerLoggedIn
+                    ? 'Sync to restaurant cloud'
+                    : 'Restaurant owner login required',
+              );
+            },
+          ),
+        ],
       ),
       body: Consumer<MenuCartProvider>(
         builder: (context, cart, child) {
@@ -327,7 +384,48 @@ class _CartScreenState extends State<CartScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
+          // Restaurant owner login status indicator
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: cart.isOwnerLoggedIn
+                  ? AppColors.successColor.withValues(alpha: 0.1)
+                  : Colors.orange.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: cart.isOwnerLoggedIn
+                    ? AppColors.successColor.withValues(alpha: 0.3)
+                    : Colors.orange.withValues(alpha: 0.3),
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  cart.isOwnerLoggedIn ? Icons.restaurant_menu : Icons.login,
+                  size: 16,
+                  color: cart.isOwnerLoggedIn
+                      ? AppColors.successColor
+                      : Colors.orange,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    cart.loginStatusMessage,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: cart.isOwnerLoggedIn
+                          ? AppColors.successColor
+                          : Colors.orange,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
@@ -484,22 +582,12 @@ class _CartScreenState extends State<CartScreen> {
     HapticFeedback.lightImpact();
 
     try {
-      // Simulate cart refresh (recalculate totals, validate offers, etc.)
-      await Future.delayed(const Duration(milliseconds: 500));
-
-      // Refresh loading state
-      setState(() {
-        _isLoading = true;
-      });
-
-      // Simulate loading delay
-      await Future.delayed(const Duration(milliseconds: 300));
-
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
+      // Refresh cart from Firebase if restaurant owner is logged in
+      final cartProvider = Provider.of<MenuCartProvider>(
+        context,
+        listen: false,
+      );
+      await cartProvider.refreshCartFromFirebase();
 
       // Add success haptic feedback
       HapticFeedback.selectionClick();
@@ -507,9 +595,13 @@ class _CartScreenState extends State<CartScreen> {
       // Show success message
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Cart refreshed! 🛒'),
-            duration: Duration(seconds: 2),
+          SnackBar(
+            content: Text(
+              cartProvider.isOwnerLoggedIn
+                  ? 'Cart refreshed from restaurant cloud! 🛒☁️'
+                  : 'Cart refreshed! 🛒',
+            ),
+            duration: const Duration(seconds: 2),
             backgroundColor: AppColors.successColor,
             behavior: SnackBarBehavior.floating,
           ),

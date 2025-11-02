@@ -71,8 +71,39 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class MainScreen extends StatelessWidget {
+class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
+
+  @override
+  State<MainScreen> createState() => _MainScreenState();
+}
+
+class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+
+    // Cart provider initializes itself automatically in constructor
+    // No need to call initializeCart() here to avoid duplicate initialization
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+
+    if (state == AppLifecycleState.resumed) {
+      // App resumed - check if cart needs to be loaded
+      final cartProvider = context.read<MenuCartProvider>();
+      cartProvider.loadCartOnAppResume();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
