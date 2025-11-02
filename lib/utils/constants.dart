@@ -650,7 +650,8 @@ final List<Restaurant> sampleRestaurants = [
   Restaurant(
     id: "38",
     name: "Taco Bell",
-    image: "https://images.unsplash.com/photo-1565299585323-38174c4a6471?w=500",
+    image:
+        "https://images.unsplash.com/photo-1589302168068-964664d93dc0?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=387",
     cuisine: "Mexican, Tacos, Fast Food",
     rating: 4.2,
     deliveryTime: "25-30 mins",
@@ -2205,7 +2206,7 @@ final List<FeaturedDeal> sampleFeaturedDeals = [
     discountedPrice: "₹199",
     discount: "50% OFF",
     imageUrl:
-        "https://images.unsplash.com/photo-1563379091339-03246963d51a?w=500",
+        "https://images.unsplash.com/photo-1697155406055-2db32d47ca07?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=870",
     description: "Authentic Hyderabadi chicken biryani with raita and shorba",
     expiryDate: DateTime.now().add(const Duration(hours: 12)),
   ),

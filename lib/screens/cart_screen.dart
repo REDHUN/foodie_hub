@@ -124,11 +124,13 @@ class _CartScreenState extends State<CartScreen> {
   }
 
   Widget _buildCartItem(BuildContext context, MenuCartItem item) {
-    return Card(
-      color: Colors.white,
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey[200]!),
+      ),
       margin: const EdgeInsets.only(bottom: 16),
-      elevation: 1,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: Row(

@@ -543,7 +543,7 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
             children: [
               _buildCategoryItem(
                 'Biryani',
-                'https://images.unsplash.com/photo-1563379091339-03246963d51a?w=200',
+                'https://images.unsplash.com/photo-1697155406055-2db32d47ca07?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=870',
                 const Color(0xFFFF6B6B),
                 'Biryani',
               ),
