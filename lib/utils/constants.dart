@@ -2062,3 +2062,187 @@ final List<MenuItem> sampleMenuItems = [
     category: "Coffee",
   ),
 ];
+
+// Promotional Banner Data
+class PromoBanner {
+  final String id;
+  final String title;
+  final String subtitle;
+  final String description;
+  final String imageUrl;
+  final String? offerText;
+  final Color backgroundColor;
+  final Color textColor;
+  final String? buttonText;
+  final String? deepLink;
+  final DateTime? expiryDate;
+  final bool isActive;
+
+  const PromoBanner({
+    required this.id,
+    required this.title,
+    required this.subtitle,
+    required this.description,
+    required this.imageUrl,
+    this.offerText,
+    required this.backgroundColor,
+    required this.textColor,
+    this.buttonText,
+    this.deepLink,
+    this.expiryDate,
+    this.isActive = true,
+  });
+}
+
+// Sample promotional banners
+final List<PromoBanner> samplePromoBanners = [
+  PromoBanner(
+    id: "promo1",
+    title: "FREE DELIVERY",
+    subtitle: "On orders above ₹199",
+    description:
+        "Get free delivery on all orders above ₹199. Valid for limited time only!",
+    imageUrl:
+        "https://images.unsplash.com/photo-1589302168068-964664d93dc0?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=387",
+    offerText: "FREE",
+    backgroundColor: const Color(0xFF4CAF50),
+    textColor: Colors.white,
+    buttonText: "Order Now",
+    isActive: true,
+  ),
+  PromoBanner(
+    id: "promo2",
+    title: "50% OFF",
+    subtitle: "On your first order",
+    description:
+        "New to FoodieHub? Get 50% off on your first order up to ₹100!",
+    imageUrl:
+        "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800&h=400&fit=crop",
+    offerText: "50% OFF",
+    backgroundColor: const Color(0xFFFF6B6B),
+    textColor: Colors.white,
+    buttonText: "Claim Offer",
+    isActive: true,
+  ),
+  PromoBanner(
+    id: "promo3",
+    title: "WEEKEND SPECIAL",
+    subtitle: "Buy 1 Get 1 Free",
+    description:
+        "Weekend special offer! Buy 1 Get 1 Free on selected restaurants.",
+    imageUrl:
+        "https://images.unsplash.com/photo-1571091718767-18b5b1457add?w=800&h=400&fit=crop",
+    offerText: "BOGO",
+    backgroundColor: const Color(0xFF9C27B0),
+    textColor: Colors.white,
+    buttonText: "Explore",
+    isActive: true,
+  ),
+  PromoBanner(
+    id: "promo4",
+    title: "FLASH SALE",
+    subtitle: "Up to 70% off",
+    description:
+        "Limited time flash sale! Up to 70% off on premium restaurants.",
+    imageUrl:
+        "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=800&h=400&fit=crop",
+    offerText: "70% OFF",
+    backgroundColor: const Color(0xFFFF9800),
+    textColor: Colors.white,
+    buttonText: "Shop Now",
+    expiryDate: DateTime.now().add(const Duration(hours: 6)),
+    isActive: true,
+  ),
+  PromoBanner(
+    id: "promo5",
+    title: "MIDNIGHT CRAVINGS",
+    subtitle: "Late night delivery",
+    description: "Satisfy your midnight cravings! 24/7 delivery available.",
+    imageUrl:
+        "https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=800&h=400&fit=crop",
+    offerText: "24/7",
+    backgroundColor: const Color(0xFF2196F3),
+    textColor: Colors.white,
+    buttonText: "Order Now",
+    isActive: true,
+  ),
+];
+
+// Featured Deal Data
+class FeaturedDeal {
+  final String id;
+  final String title;
+  final String restaurantName;
+  final String originalPrice;
+  final String discountedPrice;
+  final String discount;
+  final String imageUrl;
+  final String description;
+  final DateTime expiryDate;
+  final bool isLimitedTime;
+
+  const FeaturedDeal({
+    required this.id,
+    required this.title,
+    required this.restaurantName,
+    required this.originalPrice,
+    required this.discountedPrice,
+    required this.discount,
+    required this.imageUrl,
+    required this.description,
+    required this.expiryDate,
+    this.isLimitedTime = true,
+  });
+}
+
+// Sample featured deals
+final List<FeaturedDeal> sampleFeaturedDeals = [
+  FeaturedDeal(
+    id: "deal1",
+    title: "Chicken Biryani Combo",
+    restaurantName: "Biryani Blues",
+    originalPrice: "₹399",
+    discountedPrice: "₹199",
+    discount: "50% OFF",
+    imageUrl:
+        "https://images.unsplash.com/photo-1563379091339-03246963d51a?w=500",
+    description: "Authentic Hyderabadi chicken biryani with raita and shorba",
+    expiryDate: DateTime.now().add(const Duration(hours: 12)),
+  ),
+  FeaturedDeal(
+    id: "deal2",
+    title: "Pizza Feast",
+    restaurantName: "Pizza Hut",
+    originalPrice: "₹799",
+    discountedPrice: "₹399",
+    discount: "50% OFF",
+    imageUrl:
+        "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=500",
+    description: "2 Medium pizzas + Garlic bread + Coke",
+    expiryDate: DateTime.now().add(const Duration(hours: 8)),
+  ),
+  FeaturedDeal(
+    id: "deal3",
+    title: "Burger Combo",
+    restaurantName: "Burger King",
+    originalPrice: "₹299",
+    discountedPrice: "₹149",
+    discount: "50% OFF",
+    imageUrl:
+        "https://images.unsplash.com/photo-1571091718767-18b5b1457add?w=500",
+    description: "Whopper + Fries + Drink",
+    expiryDate: DateTime.now().add(const Duration(hours: 6)),
+  ),
+];
+
+// Animated GIF URLs for promotional content
+class PromoGifs {
+  static const String deliveryAnimation =
+      "https://cdn.dribbble.com/users/1138853/screenshots/4834292/media/06eb0fdb8e95b2b2c8b6b7b8b8b8b8b8.gif";
+  static const String foodAnimation =
+      "https://cdn.dribbble.com/users/1138853/screenshots/4834292/media/food-delivery-animation.gif";
+  static const String cookingAnimation =
+      "https://cdn.dribbble.com/users/1138853/screenshots/4834292/media/cooking-animation.gif";
+  static const String discountAnimation =
+      "https://cdn.dribbble.com/users/1138853/screenshots/4834292/media/discount-animation.gif";
+}

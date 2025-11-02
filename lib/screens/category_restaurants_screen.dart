@@ -1,8 +1,10 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:foodiehub/models/restaurant.dart';
 import 'package:foodiehub/screens/restaurant_detail_screen.dart';
 import 'package:foodiehub/utils/constants.dart';
+import 'package:foodiehub/widgets/shimmer_loading.dart';
 import 'package:foodiehub/widgets/star_rating.dart';
 
 class CategoryRestaurantsScreen extends StatefulWidget {
@@ -24,6 +26,20 @@ class _CategoryRestaurantsScreenState extends State<CategoryRestaurantsScreen> {
   String _selectedSortBy = 'Relevance';
   bool _showOffersOnly = false;
   double _minRating = 0.0;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    // Simulate loading delay
+    Future.delayed(const Duration(milliseconds: 800), () {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -53,8 +69,18 @@ class _CategoryRestaurantsScreenState extends State<CategoryRestaurantsScreen> {
       ),
       body: Column(
         children: [
-          // Filter section
+          // Filter section - Sticky
           Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.05),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
             padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -74,14 +100,28 @@ class _CategoryRestaurantsScreenState extends State<CategoryRestaurantsScreen> {
           ),
           // Restaurant list
           Expanded(
-            child: filteredRestaurants.isEmpty
-                ? _buildEmptyState()
-                : ListView.builder(
+            child: _isLoading
+                ? ListView.builder(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
-                    itemCount: filteredRestaurants.length,
+                    itemCount: 6,
                     itemBuilder: (context, index) {
-                      return _buildRestaurantCard(filteredRestaurants[index]);
+                      return ShimmerLoading(
+                        isLoading: true,
+                        child: const FullRestaurantCardShimmer(),
+                      );
                     },
+                  )
+                : filteredRestaurants.isEmpty
+                ? _buildEmptyState()
+                : RefreshIndicator(
+                    onRefresh: _refreshRestaurants,
+                    child: ListView.builder(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      itemCount: filteredRestaurants.length,
+                      itemBuilder: (context, index) {
+                        return _buildRestaurantCard(filteredRestaurants[index]);
+                      },
+                    ),
                   ),
           ),
         ],
@@ -581,5 +621,56 @@ class _CategoryRestaurantsScreenState extends State<CategoryRestaurantsScreen> {
         );
       },
     );
+  }
+
+  Future<void> _refreshRestaurants() async {
+    // Add haptic feedback
+    HapticFeedback.lightImpact();
+
+    try {
+      // Simulate refresh delay
+      setState(() {
+        _isLoading = true;
+      });
+
+      // Simulate loading delay
+      await Future.delayed(const Duration(milliseconds: 800));
+
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+
+      // Add success haptic feedback
+      HapticFeedback.selectionClick();
+
+      // Show success message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${widget.category} restaurants refreshed! 🍽️'),
+            duration: const Duration(seconds: 2),
+            backgroundColor: AppColors.successColor,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (error) {
+      // Add error haptic feedback
+      HapticFeedback.heavyImpact();
+
+      // Show error message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to refresh: $error'),
+            duration: const Duration(seconds: 3),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
   }
 }

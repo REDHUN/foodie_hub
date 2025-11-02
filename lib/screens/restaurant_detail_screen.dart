@@ -1,11 +1,13 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:foodiehub/models/menu_item.dart';
 import 'package:foodiehub/models/restaurant.dart';
 import 'package:foodiehub/providers/menu_cart_provider.dart';
 import 'package:foodiehub/providers/menu_item_provider.dart';
 import 'package:foodiehub/screens/cart_screen.dart';
 import 'package:foodiehub/utils/constants.dart';
+import 'package:foodiehub/widgets/shimmer_loading.dart';
 import 'package:foodiehub/widgets/star_rating.dart';
 import 'package:provider/provider.dart';
 
@@ -47,23 +49,26 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
       body: Column(
         children: [
           Expanded(
-            child: CustomScrollView(
-              slivers: [
-                _buildAppBar(),
-                SliverToBoxAdapter(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildRestaurantInfo(),
+            child: RefreshIndicator(
+              onRefresh: _refreshMenuItems,
+              child: CustomScrollView(
+                slivers: [
+                  _buildAppBar(),
+                  SliverToBoxAdapter(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildRestaurantInfo(),
 
-                      _buildMenuSection(
-                        menuItems,
-                        isLoading: menuItemProvider.isLoading,
-                      ),
-                    ],
+                        _buildMenuSection(
+                          menuItems,
+                          isLoading: menuItemProvider.isLoading,
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
           if (Provider.of<MenuCartProvider>(context).itemCount > 0)
@@ -180,11 +185,20 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
 
   Widget _buildMenuSection(List<MenuItem> menuItems, {bool isLoading = false}) {
     if (isLoading && menuItems.isEmpty) {
-      return const Center(
-        child: Padding(
-          padding: EdgeInsets.all(40),
-          child: CircularProgressIndicator(),
-        ),
+      return ListView.builder(
+        padding: EdgeInsets.zero,
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        itemCount: 6,
+        itemBuilder: (context, index) {
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+            child: ShimmerLoading(
+              isLoading: true,
+              child: const MenuItemShimmer(),
+            ),
+          );
+        },
       );
     }
 
@@ -468,5 +482,50 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
         );
       },
     );
+  }
+
+  Future<void> _refreshMenuItems() async {
+    // Add haptic feedback
+    HapticFeedback.lightImpact();
+
+    try {
+      // Reload menu items for this restaurant
+      final menuItemProvider = Provider.of<MenuItemProvider>(
+        context,
+        listen: false,
+      );
+
+      await menuItemProvider.loadMenuItemsForRestaurant(widget.restaurant.id);
+
+      // Add success haptic feedback
+      HapticFeedback.selectionClick();
+
+      // Show success message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Menu refreshed! 🍽️'),
+            duration: Duration(seconds: 2),
+            backgroundColor: AppColors.successColor,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (error) {
+      // Add error haptic feedback
+      HapticFeedback.heavyImpact();
+
+      // Show error message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to refresh menu: $error'),
+            duration: const Duration(seconds: 3),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
   }
 }

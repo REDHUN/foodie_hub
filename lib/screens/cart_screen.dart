@@ -1,12 +1,34 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:foodiehub/models/menu_cart_item.dart';
 import 'package:foodiehub/providers/menu_cart_provider.dart';
 import 'package:foodiehub/utils/constants.dart';
+import 'package:foodiehub/widgets/shimmer_loading.dart';
 import 'package:provider/provider.dart';
 
-class CartScreen extends StatelessWidget {
+class CartScreen extends StatefulWidget {
   const CartScreen({super.key});
+
+  @override
+  State<CartScreen> createState() => _CartScreenState();
+}
+
+class _CartScreenState extends State<CartScreen> {
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    // Simulate loading delay
+    Future.delayed(const Duration(milliseconds: 500), () {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -17,7 +39,10 @@ class CartScreen extends StatelessWidget {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () {
+            HapticFeedback.lightImpact();
+            Navigator.pop(context);
+          },
         ),
         title: const Text(
           'Your Cart',
@@ -63,14 +88,32 @@ class CartScreen extends StatelessWidget {
           return Column(
             children: [
               Expanded(
-                child: ListView(
-                  padding: const EdgeInsets.all(16),
-                  children: [
-                    ...cart.items.map((item) {
-                      return _buildCartItem(context, item);
-                    }),
-                  ],
-                ),
+                child: _isLoading
+                    ? ListView.builder(
+                        padding: const EdgeInsets.all(16),
+                        itemCount: 3,
+                        itemBuilder: (context, index) {
+                          return ShimmerLoading(
+                            isLoading: true,
+                            child: const CartItemShimmer(),
+                          );
+                        },
+                      )
+                    : RefreshIndicator(
+                        onRefresh: _refreshCart,
+                        child: ListView(
+                          padding: const EdgeInsets.all(16),
+                          children: [
+                            ...cart.items.map((item) {
+                              return _buildCartItem(context, item);
+                            }),
+                            if (cart.appliedOffers.isNotEmpty) ...[
+                              const SizedBox(height: 16),
+                              _buildAppliedOffersSection(context, cart),
+                            ],
+                          ],
+                        ),
+                      ),
               ),
               _buildCartFooter(context, cart),
             ],
@@ -151,6 +194,7 @@ class CartScreen extends StatelessWidget {
                             icon: const Icon(Icons.remove_circle_outline),
                             color: AppColors.primaryColor,
                             onPressed: () {
+                              HapticFeedback.lightImpact();
                               Provider.of<MenuCartProvider>(
                                 context,
                                 listen: false,
@@ -175,6 +219,7 @@ class CartScreen extends StatelessWidget {
                             icon: const Icon(Icons.add_circle_outline),
                             color: AppColors.primaryColor,
                             onPressed: () {
+                              HapticFeedback.lightImpact();
                               Provider.of<MenuCartProvider>(
                                 context,
                                 listen: false,
@@ -217,7 +262,7 @@ class CartScreen extends StatelessWidget {
                 style: TextStyle(fontSize: 16, color: Colors.grey),
               ),
               Text(
-                '₹${cart.totalAmount.toInt()}',
+                '₹${cart.subtotalAmount.toInt()}',
                 style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -225,6 +270,26 @@ class CartScreen extends StatelessWidget {
               ),
             ],
           ),
+          if (cart.appliedOffers.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Discount',
+                  style: TextStyle(fontSize: 16, color: Colors.green),
+                ),
+                Text(
+                  '-₹${cart.discountAmount.toInt()}',
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.green,
+                  ),
+                ),
+              ],
+            ),
+          ],
           const SizedBox(height: 8),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -265,6 +330,7 @@ class CartScreen extends StatelessWidget {
             width: double.infinity,
             child: ElevatedButton(
               onPressed: () {
+                HapticFeedback.mediumImpact();
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
                     content: Text('Order placed successfully!'),
@@ -298,5 +364,170 @@ class CartScreen extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Widget _buildAppliedOffersSection(
+    BuildContext context,
+    MenuCartProvider cart,
+  ) {
+    return Card(
+      color: Colors.green.withValues(alpha: 0.1),
+      margin: EdgeInsets.zero,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: Colors.green.withValues(alpha: 0.3)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.local_offer, color: Colors.green, size: 20),
+                const SizedBox(width: 8),
+                const Text(
+                  'Applied Offers',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.green,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            ...cart.appliedOffers.map((offer) {
+              return Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: Colors.green.withValues(alpha: 0.2),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            offer.title,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            offer.description,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          '-₹${offer.discountAmount.toInt()}',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.green,
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: () {
+                            HapticFeedback.lightImpact();
+                            cart.removeOffer(offer.id);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('${offer.title} removed'),
+                                duration: const Duration(seconds: 2),
+                                backgroundColor: Colors.orange,
+                              ),
+                            );
+                          },
+                          child: const Text(
+                            'Remove',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.red,
+                              decoration: TextDecoration.underline,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              );
+            }),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _refreshCart() async {
+    // Add haptic feedback
+    HapticFeedback.lightImpact();
+
+    try {
+      // Simulate cart refresh (recalculate totals, validate offers, etc.)
+      await Future.delayed(const Duration(milliseconds: 500));
+
+      // Refresh loading state
+      setState(() {
+        _isLoading = true;
+      });
+
+      // Simulate loading delay
+      await Future.delayed(const Duration(milliseconds: 300));
+
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+
+      // Add success haptic feedback
+      HapticFeedback.selectionClick();
+
+      // Show success message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Cart refreshed! 🛒'),
+            duration: Duration(seconds: 2),
+            backgroundColor: AppColors.successColor,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (error) {
+      // Add error haptic feedback
+      HapticFeedback.heavyImpact();
+
+      // Show error message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to refresh cart: $error'),
+            duration: const Duration(seconds: 3),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
   }
 }

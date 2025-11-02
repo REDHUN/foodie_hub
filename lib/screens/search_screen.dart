@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:foodiehub/models/restaurant.dart';
 import 'package:foodiehub/providers/restaurant_provider.dart';
 import 'package:foodiehub/screens/restaurant_detail_screen.dart';
 import 'package:foodiehub/utils/constants.dart';
+import 'package:foodiehub/widgets/shimmer_loading.dart';
 import 'package:foodiehub/widgets/star_rating.dart';
 import 'package:provider/provider.dart';
 
@@ -19,6 +21,7 @@ class _SearchScreenState extends State<SearchScreen> {
   List<Restaurant> _filteredRestaurants = [];
   List<Restaurant> _allRestaurants = [];
   bool _isSearching = false;
+  bool _isLoading = false;
   final List<String> _recentSearches = [];
   final List<String> _popularSearches = [
     'Pizza',
@@ -57,27 +60,40 @@ class _SearchScreenState extends State<SearchScreen> {
       setState(() {
         _filteredRestaurants = [];
         _isSearching = false;
+        _isLoading = false;
       });
       return;
     }
 
     setState(() {
       _isSearching = true;
-      _filteredRestaurants = _allRestaurants.where((restaurant) {
-        return restaurant.name.toLowerCase().contains(query.toLowerCase()) ||
-            restaurant.cuisine.toLowerCase().contains(query.toLowerCase());
-      }).toList();
+      _isLoading = true;
     });
 
-    // Add to recent searches if not already present
-    if (!_recentSearches.contains(query) && query.length > 2) {
-      setState(() {
-        _recentSearches.insert(0, query);
-        if (_recentSearches.length > 5) {
-          _recentSearches.removeLast();
+    // Simulate network delay for shimmer effect
+    Future.delayed(const Duration(milliseconds: 800), () {
+      if (mounted) {
+        setState(() {
+          _filteredRestaurants = _allRestaurants.where((restaurant) {
+            return restaurant.name.toLowerCase().contains(
+                  query.toLowerCase(),
+                ) ||
+                restaurant.cuisine.toLowerCase().contains(query.toLowerCase());
+          }).toList();
+          _isLoading = false;
+        });
+
+        // Add to recent searches if not already present
+        if (!_recentSearches.contains(query) && query.length > 2) {
+          setState(() {
+            _recentSearches.insert(0, query);
+            if (_recentSearches.length > 5) {
+              _recentSearches.removeLast();
+            }
+          });
         }
-      });
-    }
+      }
+    });
   }
 
   void _clearSearch() {
@@ -92,62 +108,117 @@ class _SearchScreenState extends State<SearchScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: Container(
-          height: 40,
-          decoration: BoxDecoration(
-            color: Colors.grey[100],
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: TextField(
-            controller: _searchController,
-            focusNode: _searchFocusNode,
-            onChanged: _performSearch,
-            decoration: InputDecoration(
-              hintText: 'Search restaurants, cuisines...',
-              hintStyle: TextStyle(color: Colors.grey[600], fontSize: 14),
-              prefixIcon: Icon(Icons.search, color: Colors.grey[600], size: 20),
-              suffixIcon: _searchController.text.isNotEmpty
-                  ? IconButton(
-                      icon: Icon(
-                        Icons.clear,
+      body: CustomScrollView(
+        slivers: [
+          SliverAppBar(
+            backgroundColor: Colors.white,
+            elevation: 0,
+            floating: true,
+            pinned: true,
+            snap: true,
+            expandedHeight: 80,
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back, color: Colors.black),
+              onPressed: () {
+                HapticFeedback.lightImpact();
+                Navigator.pop(context);
+              },
+            ),
+            actions: [
+              Container(
+                margin: const EdgeInsets.only(right: 16, top: 8, bottom: 8),
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  Icons.restaurant_menu,
+                  color: AppColors.primaryColor,
+                  size: 24,
+                ),
+              ),
+            ],
+            flexibleSpace: FlexibleSpaceBar(
+              background: Container(
+                color: Colors.white,
+                padding: const EdgeInsets.only(
+                  left: 60,
+                  right: 70,
+                  top: 40,
+                  bottom: 16,
+                ),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.grey[100],
+                    borderRadius: BorderRadius.circular(25),
+                  ),
+                  child: TextField(
+                    controller: _searchController,
+                    focusNode: _searchFocusNode,
+                    onChanged: _performSearch,
+                    decoration: InputDecoration(
+                      hintText: 'Search restaurants, cuisines...',
+                      hintStyle: TextStyle(
                         color: Colors.grey[600],
-                        size: 20,
+                        fontSize: 16,
                       ),
-                      onPressed: _clearSearch,
-                    )
-                  : IconButton(
-                      icon: Icon(Icons.mic, color: Colors.grey[600], size: 20),
-                      onPressed: () {
-                        // Voice search placeholder
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Voice search coming soon!'),
-                            duration: Duration(seconds: 2),
-                          ),
-                        );
-                      },
+                      prefixIcon: Icon(
+                        Icons.search,
+                        color: Colors.grey[600],
+                        size: 22,
+                      ),
+                      suffixIcon: _searchController.text.isNotEmpty
+                          ? IconButton(
+                              icon: Icon(
+                                Icons.clear,
+                                color: Colors.grey[600],
+                                size: 22,
+                              ),
+                              onPressed: () {
+                                HapticFeedback.lightImpact();
+                                _clearSearch();
+                              },
+                            )
+                          : IconButton(
+                              icon: Icon(
+                                Icons.mic,
+                                color: Colors.grey[600],
+                                size: 22,
+                              ),
+                              onPressed: () {
+                                HapticFeedback.lightImpact();
+                                // Voice search placeholder
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Voice search coming soon!'),
+                                    duration: Duration(seconds: 2),
+                                  ),
+                                );
+                              },
+                            ),
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 15,
+                      ),
                     ),
-              border: InputBorder.none,
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 10,
+                  ),
+                ),
               ),
             ),
           ),
-        ),
+          SliverToBoxAdapter(child: _buildBody()),
+        ],
       ),
-      body: _buildBody(),
     );
   }
 
   Widget _buildBody() {
+    if (_isLoading) {
+      return _buildSearchShimmer();
+    }
+
     if (_isSearching &&
         _filteredRestaurants.isEmpty &&
         _searchController.text.isNotEmpty) {
@@ -183,6 +254,7 @@ class _SearchScreenState extends State<SearchScreen> {
               children: _recentSearches.map((search) {
                 return GestureDetector(
                   onTap: () {
+                    HapticFeedback.lightImpact();
                     _searchController.text = search;
                     _performSearch(search);
                   },
@@ -232,6 +304,7 @@ class _SearchScreenState extends State<SearchScreen> {
             children: _popularSearches.map((search) {
               return GestureDetector(
                 onTap: () {
+                  HapticFeedback.lightImpact();
                   _searchController.text = search;
                   _performSearch(search);
                 },
@@ -315,6 +388,7 @@ class _SearchScreenState extends State<SearchScreen> {
         final category = categories[index];
         return GestureDetector(
           onTap: () {
+            HapticFeedback.lightImpact();
             _searchController.text = category['name'] as String;
             _performSearch(category['name'] as String);
           },
@@ -363,18 +437,24 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   Widget _buildSearchResults() {
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: _filteredRestaurants.length,
-      itemBuilder: (context, index) {
-        return _buildRestaurantCard(_filteredRestaurants[index]);
-      },
+    return RefreshIndicator(
+      onRefresh: _refreshSearchResults,
+      child: ListView.builder(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(16),
+        itemCount: _filteredRestaurants.length,
+        itemBuilder: (context, index) {
+          return _buildRestaurantCard(_filteredRestaurants[index]);
+        },
+      ),
     );
   }
 
   Widget _buildRestaurantCard(Restaurant restaurant) {
     return GestureDetector(
       onTap: () {
+        HapticFeedback.lightImpact();
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -513,5 +593,69 @@ class _SearchScreenState extends State<SearchScreen> {
         ),
       ),
     );
+  }
+
+  Widget _buildSearchShimmer() {
+    return ListView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      padding: const EdgeInsets.all(16),
+      itemCount: 6,
+      itemBuilder: (context, index) {
+        return ShimmerLoading(
+          isLoading: true,
+          child: const SearchResultShimmer(),
+        );
+      },
+    );
+  }
+
+  Future<void> _refreshSearchResults() async {
+    // Add haptic feedback
+    HapticFeedback.lightImpact();
+
+    try {
+      // Reload restaurants data
+      final restaurantProvider = context.read<RestaurantProvider>();
+      await restaurantProvider.loadRestaurants();
+
+      // Update local restaurants list
+      _loadRestaurants();
+
+      // Re-perform current search
+      if (_searchController.text.isNotEmpty) {
+        _performSearch(_searchController.text);
+      }
+
+      // Add success haptic feedback
+      HapticFeedback.selectionClick();
+
+      // Show success message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Search results refreshed! 🔍'),
+            duration: Duration(seconds: 2),
+            backgroundColor: AppColors.successColor,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (error) {
+      // Add error haptic feedback
+      HapticFeedback.heavyImpact();
+
+      // Show error message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to refresh: $error'),
+            duration: const Duration(seconds: 3),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
   }
 }

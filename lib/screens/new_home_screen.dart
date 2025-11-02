@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:foodiehub/models/restaurant.dart';
 import 'package:foodiehub/providers/auth_provider.dart';
 import 'package:foodiehub/providers/menu_cart_provider.dart';
@@ -11,6 +12,10 @@ import 'package:foodiehub/screens/owner_login_screen.dart';
 import 'package:foodiehub/screens/restaurant_detail_screen.dart';
 import 'package:foodiehub/screens/search_screen.dart';
 import 'package:foodiehub/utils/constants.dart';
+import 'package:foodiehub/widgets/back_to_top_button.dart';
+import 'package:foodiehub/widgets/featured_deals.dart';
+import 'package:foodiehub/widgets/promotional_banner.dart';
+import 'package:foodiehub/widgets/shimmer_loading.dart';
 import 'package:foodiehub/widgets/star_rating.dart';
 import 'package:provider/provider.dart';
 
@@ -29,6 +34,10 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
   double _maxPrice = 1000.0;
   bool _fastDeliveryOnly = false;
 
+  // Scroll controller for back to top functionality
+  final ScrollController _scrollController = ScrollController();
+  bool _showBackToTop = false;
+
   @override
   void initState() {
     super.initState();
@@ -39,13 +48,91 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
         listen: false,
       ).initializeRestaurants();
     });
+
+    // Add scroll listener for back to top button
+    _scrollController.addListener(_scrollListener);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_scrollListener);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _scrollListener() {
+    if (_scrollController.offset >= 200) {
+      if (!_showBackToTop) {
+        setState(() {
+          _showBackToTop = true;
+        });
+      }
+    } else {
+      if (_showBackToTop) {
+        setState(() {
+          _showBackToTop = false;
+        });
+      }
+    }
+  }
+
+  void _scrollToTop() {
+    _scrollController.animateTo(
+      0,
+      duration: const Duration(milliseconds: 500),
+      curve: Curves.easeInOut,
+    );
   }
 
   Future<void> _refreshData() async {
-    await Provider.of<RestaurantProvider>(
-      context,
-      listen: false,
-    ).loadRestaurants();
+    // Add haptic feedback
+    HapticFeedback.lightImpact();
+
+    try {
+      // Show loading state and refresh data
+      final restaurantProvider = Provider.of<RestaurantProvider>(
+        context,
+        listen: false,
+      );
+
+      // Force reload restaurants from Firebase
+      await restaurantProvider.loadRestaurants();
+
+      // Add success haptic feedback
+      HapticFeedback.selectionClick();
+
+      // Show success message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Refreshed successfully! 🎉'),
+            duration: Duration(seconds: 2),
+            backgroundColor: AppColors.successColor,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (error) {
+      // Add error haptic feedback
+      HapticFeedback.heavyImpact();
+
+      // Show error message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to refresh: $error'),
+            duration: const Duration(seconds: 3),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            action: SnackBarAction(
+              label: 'Retry',
+              textColor: Colors.white,
+              onPressed: _refreshData,
+            ),
+          ),
+        );
+      }
+    }
   }
 
   String _getOwnerInitials(String? email) {
@@ -70,30 +157,167 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
+      floatingActionButton: BackToTopButton(
+        onPressed: _scrollToTop,
+        isVisible: _showBackToTop,
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       body: SafeArea(
-        child: RefreshIndicator(
-          onRefresh: _refreshData,
-          child: SingleChildScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Top Header
-                _buildHeader(context),
-                // Search Bar
-                _buildSearchBar(context),
-                const SizedBox(height: 20),
-                // Categories Section
-                _buildCategoriesSection(),
-                const SizedBox(height: 30),
-                // Top-rated Section
-                _buildTopRatedSection(context),
-                const SizedBox(height: 30),
-                // All Restaurants Section
-                _buildAllRestaurantsSection(context),
-              ],
+        child: Column(
+          children: [
+            // Fixed Header and Search Bar
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Column(
+                children: [
+                  // Top Header
+                  _buildHeader(context),
+                  // Search Bar - Always visible
+                  _buildSearchBar(context),
+                  const SizedBox(height: 10),
+                ],
+              ),
             ),
-          ),
+            // Scrollable Content
+            Expanded(
+              child: RefreshIndicator(
+                onRefresh: _refreshData,
+                child: SingleChildScrollView(
+                  controller: _scrollController,
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 20),
+                      // Promotional Banners
+                      Consumer<RestaurantProvider>(
+                        builder: (context, restaurantProvider, child) {
+                          final isLoading =
+                              restaurantProvider.restaurants.isEmpty;
+                          return isLoading
+                              ? ShimmerLoading(
+                                  isLoading: true,
+                                  child: const PromoBannerShimmer(),
+                                )
+                              : PromotionalBanner(
+                                  banners: samplePromoBanners,
+                                  height: 180,
+                                );
+                        },
+                      ),
+                      const SizedBox(height: 20),
+
+                      // Animated Promo Section
+                      const SizedBox(height: 20),
+                      // Categories Section
+                      Consumer<RestaurantProvider>(
+                        builder: (context, restaurantProvider, child) {
+                          final isLoading =
+                              restaurantProvider.restaurants.isEmpty;
+                          return isLoading
+                              ? Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16.0,
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      ShimmerLoading(
+                                        isLoading: true,
+                                        child: const ShimmerBox(
+                                          width: 200,
+                                          height: 18,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 12),
+                                      SizedBox(
+                                        height: 120,
+                                        child: ListView.builder(
+                                          scrollDirection: Axis.horizontal,
+                                          itemCount: 8,
+                                          itemBuilder: (context, index) {
+                                            return ShimmerLoading(
+                                              isLoading: true,
+                                              child:
+                                                  const CategoryItemShimmer(),
+                                            );
+                                          },
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                )
+                              : _buildCategoriesSection();
+                        },
+                      ),
+                      const SizedBox(height: 30),
+                      // Top-rated Section
+                      _buildTopRatedSection(context),
+                      const SizedBox(height: 10),
+                      // Featured Deals
+                      Consumer<RestaurantProvider>(
+                        builder: (context, restaurantProvider, child) {
+                          final isLoading =
+                              restaurantProvider.restaurants.isEmpty;
+                          return isLoading
+                              ? Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 16.0,
+                                      ),
+                                      child: ShimmerLoading(
+                                        isLoading: true,
+                                        child: const ShimmerBox(
+                                          width: 150,
+                                          height: 20,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 12),
+                                    SizedBox(
+                                      height: 200,
+                                      child: ListView.builder(
+                                        scrollDirection: Axis.horizontal,
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 16,
+                                        ),
+                                        itemCount: 3,
+                                        itemBuilder: (context, index) {
+                                          return ShimmerLoading(
+                                            isLoading: true,
+                                            child: const FeaturedDealShimmer(),
+                                          );
+                                        },
+                                      ),
+                                    ),
+                                  ],
+                                )
+                              : FeaturedDeals(deals: sampleFeaturedDeals);
+                        },
+                      ),
+                      const SizedBox(height: 20),
+                      // All Restaurants Section
+                      //  const AnimatedPromoSection(),
+                      // const SizedBox(height: 20),
+                      _buildAllRestaurantsSection(context),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -147,6 +371,7 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
                     : 'Restaurant owner login',
                 child: GestureDetector(
                   onTap: () {
+                    HapticFeedback.lightImpact();
                     Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -187,6 +412,7 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
           const SizedBox(width: 12),
           GestureDetector(
             onTap: () {
+              HapticFeedback.lightImpact();
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => const CartScreen()),
@@ -247,12 +473,19 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
       child: GestureDetector(
-        onTap: _navigateToSearch,
+        onTap: () {
+          HapticFeedback.lightImpact();
+          _navigateToSearch();
+        },
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: AppColors.primaryColor.withValues(alpha: 0.1),
+              width: 1,
+            ),
             boxShadow: [
               BoxShadow(
                 color: Colors.grey.withValues(alpha: 0.1),
@@ -263,7 +496,7 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
           ),
           child: Row(
             children: [
-              Icon(Icons.search, color: Colors.grey[600], size: 20),
+              Icon(Icons.search, color: AppColors.primaryColor, size: 22),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
@@ -275,7 +508,14 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
                   ),
                 ),
               ),
-              Icon(Icons.mic, color: Colors.grey[400], size: 20),
+              Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Icon(Icons.mic, color: AppColors.primaryColor, size: 16),
+              ),
             ],
           ),
         ),
@@ -365,7 +605,10 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
     return Padding(
       padding: const EdgeInsets.only(right: 16.0),
       child: GestureDetector(
-        onTap: () => _navigateToCategoryRestaurants(cuisine),
+        onTap: () {
+          HapticFeedback.lightImpact();
+          _navigateToCategoryRestaurants(cuisine);
+        },
         child: Column(
           children: [
             Container(
@@ -554,6 +797,7 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
   Widget _buildTopRatedSection(BuildContext context) {
     return Consumer<RestaurantProvider>(
       builder: (context, restaurantProvider, child) {
+        final isLoading = restaurantProvider.restaurants.isEmpty;
         final restaurants = restaurantProvider.restaurants.isNotEmpty
             ? restaurantProvider.restaurants
             : sampleRestaurants;
@@ -572,13 +816,25 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
             const SizedBox(height: 12),
             SizedBox(
               height: 240,
-              child: ListView(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                children: topRestaurants.map((restaurant) {
-                  return _buildRestaurantCard(context, restaurant);
-                }).toList(),
-              ),
+              child: isLoading
+                  ? ListView(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      children: List.generate(
+                        3,
+                        (index) => ShimmerLoading(
+                          isLoading: true,
+                          child: const RestaurantCardShimmer(),
+                        ),
+                      ),
+                    )
+                  : ListView(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      children: topRestaurants.map((restaurant) {
+                        return _buildRestaurantCard(context, restaurant);
+                      }).toList(),
+                    ),
             ),
           ],
         );
@@ -689,7 +945,10 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
 
   Widget _buildSortByChip() {
     return GestureDetector(
-      onTap: () => _showSortByBottomSheet(),
+      onTap: () {
+        HapticFeedback.lightImpact();
+        _showSortByBottomSheet();
+      },
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
         decoration: BoxDecoration(
@@ -731,6 +990,7 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
   Widget _buildOffersChip() {
     return GestureDetector(
       onTap: () {
+        HapticFeedback.lightImpact();
         setState(() {
           _showOffersOnly = !_showOffersOnly;
         });
@@ -773,7 +1033,10 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
 
   Widget _buildRatingsChip() {
     return GestureDetector(
-      onTap: () => _showRatingsBottomSheet(),
+      onTap: () {
+        HapticFeedback.lightImpact();
+        _showRatingsBottomSheet();
+      },
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
         decoration: BoxDecoration(
@@ -814,7 +1077,10 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
 
   Widget _buildPriceRangeChip() {
     return GestureDetector(
-      onTap: () => _showPriceRangeBottomSheet(),
+      onTap: () {
+        HapticFeedback.lightImpact();
+        _showPriceRangeBottomSheet();
+      },
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
         decoration: BoxDecoration(
@@ -850,6 +1116,7 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
   Widget _buildFastDeliveryChip() {
     return GestureDetector(
       onTap: () {
+        HapticFeedback.lightImpact();
         setState(() {
           _fastDeliveryOnly = !_fastDeliveryOnly;
         });
@@ -900,6 +1167,7 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
       margin: const EdgeInsets.only(right: 12),
       child: InkWell(
         onTap: () {
+          HapticFeedback.lightImpact();
           Navigator.push(
             context,
             MaterialPageRoute(
@@ -1015,6 +1283,7 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
       ),
       child: InkWell(
         onTap: () {
+          HapticFeedback.lightImpact();
           Navigator.push(
             context,
             MaterialPageRoute(
@@ -1129,6 +1398,7 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
   Widget _buildClearAllChip() {
     return GestureDetector(
       onTap: () {
+        HapticFeedback.lightImpact();
         setState(() {
           _selectedSortBy = 'Relevance';
           _showOffersOnly = false;

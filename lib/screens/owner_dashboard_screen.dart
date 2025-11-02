@@ -1,11 +1,13 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:foodiehub/models/menu_item.dart';
 import 'package:foodiehub/models/restaurant.dart';
 import 'package:foodiehub/providers/auth_provider.dart';
 import 'package:foodiehub/providers/menu_item_provider.dart';
 import 'package:foodiehub/services/restaurant_service.dart';
 import 'package:foodiehub/utils/constants.dart';
+import 'package:foodiehub/widgets/shimmer_loading.dart';
 import 'package:provider/provider.dart';
 
 class OwnerDashboardScreen extends StatefulWidget {
@@ -30,6 +32,9 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
   }
 
   Future<void> _loadOwnerData() async {
+    // Add haptic feedback
+    HapticFeedback.lightImpact();
+
     final authProvider = context.read<AuthProvider>();
     final menuItemProvider = context.read<MenuItemProvider>();
     final user = authProvider.user;
@@ -68,12 +73,30 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
         _isLoading = false;
         _error = null;
       });
+
+      // Add success haptic feedback
+      HapticFeedback.selectionClick();
+
+      // Show success message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Dashboard refreshed! 📊'),
+            duration: Duration(seconds: 2),
+            backgroundColor: AppColors.successColor,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
     } catch (e) {
       if (!mounted) return;
       setState(() {
         _error = 'Failed to load restaurant data. Please try again.';
         _isLoading = false;
       });
+
+      // Add error haptic feedback
+      HapticFeedback.heavyImpact();
     }
   }
 
@@ -136,7 +159,12 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
     List<MenuItem> menuItems,
   ) {
     if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          ShimmerLoading(isLoading: true, child: const OwnerDashboardShimmer()),
+        ],
+      );
     }
 
     if (_error != null) {
