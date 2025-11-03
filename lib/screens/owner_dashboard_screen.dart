@@ -78,17 +78,17 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
       // Add success haptic feedback
       HapticFeedback.selectionClick();
 
-      // Show success message
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Dashboard refreshed! 📊'),
-            duration: Duration(seconds: 2),
-            backgroundColor: AppColors.successColor,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
+      // // Show success message
+      // if (mounted) {
+      //   ScaffoldMessenger.of(context).showSnackBar(
+      //     const SnackBar(
+      //       content: Text('Dashboard refreshed! 📊'),
+      //       duration: Duration(seconds: 2),
+      //       backgroundColor: AppColors.successColor,
+      //       behavior: SnackBarBehavior.floating,
+      //     ),
+      //   );
+      // }
     } catch (e) {
       if (!mounted) return;
       setState(() {
