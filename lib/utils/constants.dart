@@ -242,6 +242,7 @@ final List<Restaurant> sampleRestaurants = [
     deliveryFee: 0.6,
     discount: "50% OFF UPTO ₹100",
     ownerId: "owner_1",
+    location: "Downtown, City Center",
   ),
   Restaurant(
     id: "2",
@@ -254,6 +255,7 @@ final List<Restaurant> sampleRestaurants = [
     deliveryFee: 0.5,
     discount: "₹125 OFF ABOVE ₹199",
     ownerId: "owner_2",
+    location: "Kochi, Ernakulam",
   ),
   Restaurant(
     id: "3",
@@ -266,6 +268,7 @@ final List<Restaurant> sampleRestaurants = [
     deliveryFee: 0.8,
     discount: "40% OFF UPTO ₹80",
     ownerId: "owner_3",
+    location: "Thiruvananthapuram",
   ),
   Restaurant(
     id: "4",
@@ -463,7 +466,7 @@ final List<Restaurant> sampleRestaurants = [
   Restaurant(
     id: "21",
     name: "Behrouz Biryani",
-    image: "https://images.unsplash.com/photo-1563379091339-03246963d51a?w=500",
+    image: "https://picsum.photos/seed/biryani1/400/200",
     cuisine: "Biryani, Persian, Mughlai",
     rating: 4.6,
     deliveryTime: "35-40 mins",
@@ -562,7 +565,7 @@ final List<Restaurant> sampleRestaurants = [
   Restaurant(
     id: "30",
     name: "Keventers",
-    image: "https://images.unsplash.com/photo-1553909489-cd47e0ef937f?w=500",
+    image: "https://picsum.photos/seed/keventers/400/200",
     cuisine: "Milkshakes, Beverages, Desserts",
     rating: 4.3,
     deliveryTime: "15-20 mins",

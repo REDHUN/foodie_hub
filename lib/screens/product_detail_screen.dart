@@ -1,10 +1,10 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:foodiehub/models/product.dart';
 import 'package:foodiehub/models/review.dart';
 import 'package:foodiehub/providers/cart_provider.dart';
 import 'package:foodiehub/utils/constants.dart';
+import 'package:foodiehub/widgets/reliable_image.dart';
 import 'package:foodiehub/widgets/star_rating.dart';
 import 'package:provider/provider.dart';
 
@@ -74,17 +74,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         onPressed: () => Navigator.pop(context),
       ),
       flexibleSpace: FlexibleSpaceBar(
-        background: CachedNetworkImage(
+        background: ReliableImage(
           imageUrl: widget.product.image,
           fit: BoxFit.cover,
-          placeholder: (context, url) => Container(
-            color: AppColors.lightColor,
-            child: const Center(child: CircularProgressIndicator()),
-          ),
-          errorWidget: (context, url, error) => Container(
-            color: AppColors.lightColor,
-            child: const Icon(Icons.error),
-          ),
+          category: widget.product.category,
         ),
         title: widget.product.badge != null
             ? Container(

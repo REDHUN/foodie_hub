@@ -1,9 +1,9 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:foodiehub/models/menu_cart_item.dart';
 import 'package:foodiehub/providers/menu_cart_provider.dart';
 import 'package:foodiehub/utils/constants.dart';
+import 'package:foodiehub/widgets/reliable_image.dart';
 import 'package:foodiehub/widgets/shimmer_loading.dart';
 import 'package:provider/provider.dart';
 
@@ -193,26 +193,13 @@ class _CartScreenState extends State<CartScreen> {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            ClipRRect(
+            ReliableImage(
+              imageUrl: item.menuItem.image,
+              width: 80,
+              height: 80,
+              fit: BoxFit.cover,
+              category: item.menuItem.category,
               borderRadius: BorderRadius.circular(8),
-              child: CachedNetworkImage(
-                imageUrl: item.menuItem.image,
-                width: 80,
-                height: 80,
-                fit: BoxFit.cover,
-                placeholder: (context, url) => Container(
-                  width: 80,
-                  height: 80,
-                  color: Colors.grey[200],
-                  child: const Center(child: CircularProgressIndicator()),
-                ),
-                errorWidget: (context, url, error) => Container(
-                  width: 80,
-                  height: 80,
-                  color: Colors.grey[200],
-                  child: const Icon(Icons.image_not_supported),
-                ),
-              ),
             ),
             const SizedBox(width: 12),
             Expanded(

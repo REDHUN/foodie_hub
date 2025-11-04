@@ -8,6 +8,7 @@ class Restaurant {
   final double deliveryFee;
   final String? discount;
   final String? ownerId;
+  final String? location;
 
   Restaurant({
     required this.id,
@@ -19,6 +20,7 @@ class Restaurant {
     required this.deliveryFee,
     this.discount,
     this.ownerId,
+    this.location,
   });
 
   factory Restaurant.fromJson(Map<String, dynamic> json) {
@@ -32,6 +34,7 @@ class Restaurant {
       deliveryFee: (json['deliveryFee'] as num).toDouble(),
       discount: json['discount'] as String?,
       ownerId: json['ownerId'] as String?,
+      location: json['location'] as String?,
     );
   }
 
@@ -46,6 +49,7 @@ class Restaurant {
       'deliveryFee': deliveryFee,
       'discount': discount,
       'ownerId': ownerId,
+      'location': location,
     };
   }
 
@@ -59,6 +63,7 @@ class Restaurant {
     double? deliveryFee,
     String? discount,
     String? ownerId,
+    String? location,
   }) {
     return Restaurant(
       id: id ?? this.id,
@@ -70,6 +75,7 @@ class Restaurant {
       deliveryFee: deliveryFee ?? this.deliveryFee,
       discount: discount ?? this.discount,
       ownerId: ownerId ?? this.ownerId,
+      location: location ?? this.location,
     );
   }
 }

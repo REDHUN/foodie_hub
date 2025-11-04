@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:foodiehub/models/restaurant.dart';
 import 'package:foodiehub/providers/auth_provider.dart';
+import 'package:foodiehub/providers/location_provider.dart';
 import 'package:foodiehub/providers/menu_cart_provider.dart';
 import 'package:foodiehub/providers/restaurant_provider.dart';
 import 'package:foodiehub/screens/cart_screen.dart';
@@ -47,6 +48,12 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
         context,
         listen: false,
       ).initializeRestaurants();
+
+      // Initialize location provider
+      Provider.of<LocationProvider>(
+        context,
+        listen: false,
+      ).initializeLocation();
     });
 
     // Add scroll listener for back to top button
@@ -410,9 +417,35 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
                     ),
                   ],
                 ),
-                Text(
-                  'Muhamma, Alappuzha',
-                  style: TextStyle(fontSize: 14, color: Colors.grey),
+                Consumer<LocationProvider>(
+                  builder: (context, locationProvider, child) {
+                    final location = locationProvider.getDisplayLocation();
+
+                    // Hide location display if location is empty
+                    if (location.isEmpty) {
+                      return const SizedBox.shrink();
+                    }
+
+                    return Row(
+                      children: [
+                        Icon(
+                          Icons.location_on,
+                          size: 16,
+                          color: Colors.grey[600],
+                        ),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            location,
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
                 ),
               ],
             ),

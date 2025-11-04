@@ -29,6 +29,7 @@ class _OwnerLoginScreenState extends State<OwnerLoginScreen> {
   final TextEditingController _restaurantNameController =
       TextEditingController();
   final TextEditingController _cuisineController = TextEditingController();
+  final TextEditingController _locationController = TextEditingController();
   final TextEditingController _deliveryTimeController = TextEditingController(
     text: '30-40 mins',
   );
@@ -49,6 +50,7 @@ class _OwnerLoginScreenState extends State<OwnerLoginScreen> {
     _confirmPasswordController.dispose();
     _restaurantNameController.dispose();
     _cuisineController.dispose();
+    _locationController.dispose();
     _deliveryTimeController.dispose();
     _deliveryFeeController.dispose();
     _imageUrlController.dispose();
@@ -111,6 +113,7 @@ class _OwnerLoginScreenState extends State<OwnerLoginScreen> {
 
     final restaurantName = _restaurantNameController.text.trim();
     final cuisine = _cuisineController.text.trim();
+    final location = _locationController.text.trim();
     final deliveryTime = _deliveryTimeController.text.trim();
     final imageUrl = _imageUrlController.text.trim().isEmpty
         ? 'https://images.unsplash.com/photo-1540189549336-e6e99c3679fe'
@@ -137,6 +140,7 @@ class _OwnerLoginScreenState extends State<OwnerLoginScreen> {
       deliveryFee: deliveryFee,
       discount: discount,
       ownerId: user.uid,
+      location: location.isEmpty ? null : location,
     );
 
     final success = await RestaurantService().addRestaurant(restaurant);
@@ -321,6 +325,19 @@ class _OwnerLoginScreenState extends State<OwnerLoginScreen> {
                                 validator: (value) {
                                   if (value == null || value.isEmpty) {
                                     return 'Cuisine is required';
+                                  }
+                                  return null;
+                                },
+                              ),
+                              const SizedBox(height: 16),
+                              BeautifulTextField(
+                                controller: _locationController,
+                                label: 'Restaurant Location',
+                                hint: 'e.g. Downtown, Main Street, City Center',
+                                prefixIcon: Icons.location_on_outlined,
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return 'Location is required';
                                   }
                                   return null;
                                 },

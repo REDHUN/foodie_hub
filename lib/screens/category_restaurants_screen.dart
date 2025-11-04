@@ -1,9 +1,9 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:foodiehub/models/restaurant.dart';
 import 'package:foodiehub/screens/restaurant_detail_screen.dart';
 import 'package:foodiehub/utils/constants.dart';
+import 'package:foodiehub/widgets/reliable_image.dart';
 import 'package:foodiehub/widgets/shimmer_loading.dart';
 import 'package:foodiehub/widgets/star_rating.dart';
 
@@ -346,27 +346,11 @@ class _CategoryRestaurantsScreenState extends State<CategoryRestaurantsScreen> {
               ),
               child: Stack(
                 children: [
-                  CachedNetworkImage(
+                  ReliableRestaurantImage(
                     imageUrl: restaurant.image,
                     width: double.infinity,
                     height: 160,
                     fit: BoxFit.cover,
-                    placeholder: (context, url) => Container(
-                      width: double.infinity,
-                      height: 160,
-                      color: Colors.grey[200],
-                      child: const Center(
-                        child: CircularProgressIndicator(
-                          color: AppColors.primaryColor,
-                        ),
-                      ),
-                    ),
-                    errorWidget: (context, url, error) => Container(
-                      width: double.infinity,
-                      height: 160,
-                      color: Colors.grey[200],
-                      child: const Icon(Icons.error, color: Colors.grey),
-                    ),
                   ),
                   if (restaurant.discount != null)
                     Positioned(

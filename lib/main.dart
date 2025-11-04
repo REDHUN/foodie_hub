@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:foodiehub/firebase_options.dart';
 import 'package:foodiehub/providers/auth_provider.dart';
 import 'package:foodiehub/providers/cart_provider.dart';
+import 'package:foodiehub/providers/location_provider.dart';
 import 'package:foodiehub/providers/menu_cart_provider.dart';
 import 'package:foodiehub/providers/menu_item_provider.dart';
 import 'package:foodiehub/providers/product_provider.dart';
@@ -17,6 +18,13 @@ import 'package:provider/provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Disable landscape orientation
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
+
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   runApp(const MyApp());
 }
@@ -34,6 +42,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => MenuCartProvider()),
         ChangeNotifierProvider(create: (_) => RestaurantProvider()),
         ChangeNotifierProvider(create: (_) => MenuItemProvider()),
+        ChangeNotifierProvider(create: (_) => LocationProvider()),
       ],
       child: MaterialApp(
         title: 'FoodieHub',

@@ -1,4 +1,3 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:foodiehub/models/menu_item.dart';
@@ -7,6 +6,7 @@ import 'package:foodiehub/providers/menu_cart_provider.dart';
 import 'package:foodiehub/providers/menu_item_provider.dart';
 import 'package:foodiehub/screens/cart_screen.dart';
 import 'package:foodiehub/utils/constants.dart';
+import 'package:foodiehub/widgets/reliable_image.dart';
 import 'package:foodiehub/widgets/shimmer_loading.dart';
 import 'package:foodiehub/widgets/star_rating.dart';
 import 'package:provider/provider.dart';
@@ -21,6 +21,9 @@ class RestaurantDetailScreen extends StatefulWidget {
 }
 
 class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
+  final ScrollController _scrollController = ScrollController();
+  bool _showTitle = false;
+
   @override
   void initState() {
     super.initState();
@@ -30,6 +33,26 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
         listen: false,
       ).loadMenuItemsForRestaurant(widget.restaurant.id);
     });
+
+    // Listen to scroll changes to show/hide restaurant name in app bar
+    _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    // Show title when scrolled past the image (approximately 150px)
+    final shouldShowTitle = _scrollController.offset > 150;
+    if (shouldShowTitle != _showTitle) {
+      setState(() {
+        _showTitle = shouldShowTitle;
+      });
+    }
   }
 
   @override
@@ -52,6 +75,7 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
             child: RefreshIndicator(
               onRefresh: _refreshMenuItems,
               child: CustomScrollView(
+                controller: _scrollController,
                 slivers: [
                   _buildAppBar(),
                   SliverToBoxAdapter(
@@ -83,22 +107,51 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
       expandedHeight: 200,
       pinned: true,
       backgroundColor: Colors.white,
+      foregroundColor: _showTitle ? AppColors.darkColor : Colors.white,
+      elevation: _showTitle ? 1 : 0,
+      title: AnimatedOpacity(
+        opacity: _showTitle ? 1.0 : 0.0,
+        duration: const Duration(milliseconds: 200),
+        child: Text(
+          widget.restaurant.name,
+          style: TextStyle(
+            color: AppColors.darkColor,
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+          ),
+        ),
+      ),
       leading: IconButton(
-        icon: const Icon(Icons.arrow_back, color: Colors.white),
+        icon: Icon(
+          Icons.arrow_back,
+          color: _showTitle ? AppColors.darkColor : Colors.white,
+        ),
         onPressed: () => Navigator.pop(context),
       ),
       flexibleSpace: FlexibleSpaceBar(
-        background: CachedNetworkImage(
-          imageUrl: widget.restaurant.image,
-          fit: BoxFit.cover,
-          placeholder: (context, url) => Container(
-            color: Colors.grey[300],
-            child: const Center(child: CircularProgressIndicator()),
-          ),
-          errorWidget: (context, url, error) => Container(
-            color: Colors.grey[300],
-            child: const Icon(Icons.restaurant),
-          ),
+        background: Stack(
+          fit: StackFit.expand,
+          children: [
+            ReliableRestaurantImage(
+              imageUrl: widget.restaurant.image,
+              fit: BoxFit.cover,
+            ),
+            // Gradient overlay for better text readability
+            Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.black.withValues(alpha: 0.3),
+                    Colors.transparent,
+                    Colors.black.withValues(alpha: 0.7),
+                  ],
+                  stops: const [0.0, 0.5, 1.0],
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -151,7 +204,7 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: AppColors.primaryColor.withOpacity(0.1),
+                color: AppColors.primaryColor.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Row(
@@ -239,28 +292,15 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            ClipRRect(
+            ReliableImage(
+              imageUrl: item.image,
+              width: 100,
+              height: 100,
+              fit: BoxFit.cover,
+              category: item.category,
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(12),
                 bottomLeft: Radius.circular(12),
-              ),
-              child: CachedNetworkImage(
-                imageUrl: item.image,
-                width: 100,
-                height: 100,
-                fit: BoxFit.cover,
-                placeholder: (context, url) => Container(
-                  width: 100,
-                  height: 100,
-                  color: Colors.grey[200],
-                  child: const Center(child: CircularProgressIndicator()),
-                ),
-                errorWidget: (context, url, error) => Container(
-                  width: 100,
-                  height: 100,
-                  color: Colors.grey[200],
-                  child: const Icon(Icons.image_not_supported),
-                ),
               ),
             ),
             Expanded(
@@ -385,7 +425,7 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
             color: Colors.white,
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.1),
+                color: Colors.black.withValues(alpha: 0.1),
                 blurRadius: 10,
                 offset: const Offset(0, -5),
               ),
