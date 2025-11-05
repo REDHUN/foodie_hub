@@ -541,16 +541,16 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
       HapticFeedback.selectionClick();
 
       // Show success message
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Menu refreshed! 🍽️'),
-            duration: Duration(seconds: 2),
-            backgroundColor: AppColors.successColor,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
+      // if (mounted) {
+      //   ScaffoldMessenger.of(context).showSnackBar(
+      //     const SnackBar(
+      //       content: Text('Menu refreshed! 🍽️'),
+      //       duration: Duration(seconds: 2),
+      //       backgroundColor: AppColors.successColor,
+      //       behavior: SnackBarBehavior.floating,
+      //     ),
+      //   );
+      // }
     } catch (error) {
       // Add error haptic feedback
       HapticFeedback.heavyImpact();

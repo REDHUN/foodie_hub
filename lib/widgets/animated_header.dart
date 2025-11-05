@@ -98,25 +98,10 @@ class _AnimatedHeaderState extends State<AnimatedHeader>
           const SizedBox(height: 20),
           ScaleTransition(
             scale: _scaleAnimation,
-            child: Container(
-              width: 120,
-              height: 120,
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.2),
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.1),
-                    blurRadius: 20,
-                    offset: const Offset(0, 10),
-                  ),
-                ],
-              ),
-              child: ClipOval(
-                child: Container(
-                  padding: const EdgeInsets.all(10),
-                  child: widget.illustration,
-                ),
+            child: ClipOval(
+              child: Container(
+                padding: const EdgeInsets.all(5),
+                child: widget.illustration,
               ),
             ),
           ),

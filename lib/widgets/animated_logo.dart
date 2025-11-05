@@ -63,13 +63,6 @@ class _AnimatedLogoState extends State<AnimatedLogo>
               decoration: BoxDecoration(
                 color: Colors.white.withValues(alpha: 0.2),
                 shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.white.withValues(alpha: 0.3),
-                    blurRadius: 20,
-                    spreadRadius: 5,
-                  ),
-                ],
               ),
               child: const Icon(
                 Icons.restaurant_menu,

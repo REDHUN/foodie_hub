@@ -8,7 +8,6 @@ import 'package:foodiehub/services/restaurant_service.dart';
 import 'package:foodiehub/widgets/animated_header.dart';
 import 'package:foodiehub/widgets/beautiful_button.dart';
 import 'package:foodiehub/widgets/beautiful_text_field.dart';
-import 'package:foodiehub/widgets/restaurant_owner_illustration.dart';
 import 'package:provider/provider.dart';
 
 class OwnerLoginScreen extends StatefulWidget {
@@ -169,9 +168,14 @@ class _OwnerLoginScreenState extends State<OwnerLoginScreen> {
                 subtitle: _isLoginMode
                     ? 'Log in to manage your restaurant menu and orders'
                     : 'Create an account and set up your restaurant in a few steps',
-                illustration: RestaurantOwnerIllustration(
-                  size: 100,
-                  isLoginMode: _isLoginMode,
+                illustration: ClipRRect(
+                  borderRadius: BorderRadius.circular(20),
+                  child: Image.asset(
+                    'assets/images/login_page_top_image.png',
+                    height: 120,
+                    width: 120,
+                    fit: BoxFit.cover,
+                  ),
                 ),
               ),
               Padding(

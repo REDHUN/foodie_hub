@@ -584,6 +584,10 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
               child: const Text('Cancel'),
             ),
             ElevatedButton(
+              style: ButtonStyle(
+                backgroundColor: WidgetStatePropertyAll(Colors.red),
+                foregroundColor: WidgetStatePropertyAll(Colors.white),
+              ),
               onPressed: () async {
                 if (!formKey.currentState!.validate()) {
                   return;
