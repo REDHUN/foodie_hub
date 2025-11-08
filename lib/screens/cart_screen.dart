@@ -222,6 +222,31 @@ class _CartScreenState extends State<CartScreen> {
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
+                  const SizedBox(height: 4),
+                  // Stock indicator
+                  if (item.menuItem.quantity < 999)
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.inventory_2_outlined,
+                          size: 12,
+                          color: item.menuItem.isLowStock
+                              ? Colors.orange
+                              : Colors.green,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${item.menuItem.quantity} available',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: item.menuItem.isLowStock
+                                ? Colors.orange
+                                : Colors.green,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
                   const SizedBox(height: 8),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -262,10 +287,30 @@ class _CartScreenState extends State<CartScreen> {
                             ),
                           ),
                           IconButton(
-                            icon: const Icon(Icons.add_circle_outline),
-                            color: AppColors.primaryColor,
+                            icon: Icon(
+                              Icons.add_circle_outline,
+                              color: item.quantity >= item.menuItem.quantity
+                                  ? Colors.grey
+                                  : AppColors.primaryColor,
+                            ),
                             onPressed: () {
                               HapticFeedback.lightImpact();
+
+                              // Check if we can add more
+                              if (item.quantity >= item.menuItem.quantity) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      'Maximum available quantity (${item.menuItem.quantity}) reached',
+                                    ),
+                                    duration: const Duration(seconds: 2),
+                                    backgroundColor: Colors.orange,
+                                    behavior: SnackBarBehavior.floating,
+                                  ),
+                                );
+                                return;
+                              }
+
                               Provider.of<MenuCartProvider>(
                                 context,
                                 listen: false,
@@ -292,7 +337,7 @@ class _CartScreenState extends State<CartScreen> {
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, -5),
           ),
@@ -417,7 +462,7 @@ class _CartScreenState extends State<CartScreen> {
             width: double.infinity,
             child: ElevatedButton(
               onPressed: () {
-                HapticFeedback.mediumImpact();
+                HapticFeedback.lightImpact();
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
                     content: Text('Order placed successfully!'),
@@ -577,7 +622,7 @@ class _CartScreenState extends State<CartScreen> {
       await cartProvider.refreshCartFromFirebase();
 
       // Add success haptic feedback
-      HapticFeedback.selectionClick();
+      HapticFeedback.lightImpact();
 
       // Show success message
       if (mounted) {
@@ -596,7 +641,7 @@ class _CartScreenState extends State<CartScreen> {
       }
     } catch (error) {
       // Add error haptic feedback
-      HapticFeedback.heavyImpact();
+      HapticFeedback.lightImpact();
 
       // Show error message
       if (mounted) {

@@ -8,6 +8,7 @@ class BeautifulTextField extends StatefulWidget {
   final Widget? suffixIcon;
   final TextInputType keyboardType;
   final bool obscureText;
+  final bool readOnly;
   final String? Function(String?)? validator;
   final int maxLines;
 
@@ -20,6 +21,7 @@ class BeautifulTextField extends StatefulWidget {
     this.suffixIcon,
     this.keyboardType = TextInputType.text,
     this.obscureText = false,
+    this.readOnly = false,
     this.validator,
     this.maxLines = 1,
   });
@@ -74,6 +76,7 @@ class _BeautifulTextFieldState extends State<BeautifulTextField>
             controller: widget.controller,
             keyboardType: widget.keyboardType,
             obscureText: widget.obscureText,
+            readOnly: widget.readOnly,
             maxLines: widget.maxLines,
             onTap: () {
               setState(() {

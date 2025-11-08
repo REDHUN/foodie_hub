@@ -1,10 +1,13 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:foodiehub/models/restaurant.dart';
 import 'package:foodiehub/providers/auth_provider.dart';
+import 'package:foodiehub/providers/location_provider.dart';
 import 'package:foodiehub/providers/menu_cart_provider.dart';
 import 'package:foodiehub/screens/owner_dashboard_screen.dart';
 import 'package:foodiehub/services/restaurant_service.dart';
+import 'package:foodiehub/utils/constants.dart';
 import 'package:foodiehub/widgets/animated_header.dart';
 import 'package:foodiehub/widgets/beautiful_button.dart';
 import 'package:foodiehub/widgets/beautiful_text_field.dart';
@@ -41,6 +44,10 @@ class _OwnerLoginScreenState extends State<OwnerLoginScreen> {
   bool _isLoginMode = true;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
+  bool _isGettingLocation = false;
+
+  // Store GPS data
+  GeoPoint? _geopoint;
 
   @override
   void dispose() {
@@ -61,6 +68,65 @@ class _OwnerLoginScreenState extends State<OwnerLoginScreen> {
     setState(() {
       _isLoginMode = !_isLoginMode;
     });
+  }
+
+  Future<void> _getCurrentLocation() async {
+    setState(() {
+      _isGettingLocation = true;
+    });
+
+    try {
+      final locationProvider = context.read<LocationProvider>();
+      final position = await locationProvider.getUserLocation();
+
+      if (position != null) {
+        setState(() {
+          // Store GPS coordinates directly as GeoPoint
+          _geopoint = GeoPoint(position.latitude, position.longitude);
+
+          // Update location field with GPS location name
+          if (locationProvider.locationName.isNotEmpty) {
+            _locationController.text = locationProvider.locationName;
+          }
+        });
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Location obtained successfully! 📍'),
+              backgroundColor: AppColors.successColor,
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                locationProvider.locationError ?? 'Failed to get location',
+              ),
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 3),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    } finally {
+      setState(() {
+        _isGettingLocation = false;
+      });
+    }
   }
 
   Future<void> _handleSubmit() async {
@@ -140,6 +206,7 @@ class _OwnerLoginScreenState extends State<OwnerLoginScreen> {
       discount: discount,
       ownerId: user.uid,
       location: location.isEmpty ? null : location,
+      geopoint: _geopoint, // Include GPS coordinates
     );
 
     final success = await RestaurantService().addRestaurant(restaurant);
@@ -334,18 +401,122 @@ class _OwnerLoginScreenState extends State<OwnerLoginScreen> {
                                 },
                               ),
                               const SizedBox(height: 16),
-                              BeautifulTextField(
-                                controller: _locationController,
-                                label: 'Restaurant Location',
-                                hint: 'e.g. Downtown, Main Street, City Center',
-                                prefixIcon: Icons.location_on_outlined,
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return 'Location is required';
-                                  }
-                                  return null;
-                                },
+                              // Location field with GPS button
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  Expanded(
+                                    child: BeautifulTextField(
+                                      controller: _locationController,
+                                      label: 'Restaurant Location',
+                                      hint: 'Tap GPS button to set location',
+                                      prefixIcon: Icons.location_on_outlined,
+                                      readOnly: true,
+                                      validator: (value) {
+                                        if (value == null || value.isEmpty) {
+                                          return 'Location is required';
+                                        }
+                                        return null;
+                                      },
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  InkWell(
+                                    onTap: _isGettingLocation
+                                        ? null
+                                        : _getCurrentLocation,
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        color: AppColors.primaryColor,
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+
+                                      width: 45,
+                                      height: 45,
+
+                                      child: _isGettingLocation
+                                          ? const SizedBox(
+                                              width: 10,
+                                              height: 10,
+                                              child: Padding(
+                                                padding: EdgeInsets.all(13.0),
+                                                child:
+                                                    CircularProgressIndicator(
+                                                      constraints:
+                                                          BoxConstraints(
+                                                            maxHeight: 10,
+                                                            maxWidth: 10,
+                                                          ),
+                                                      strokeWidth: 2,
+
+                                                      color: Colors.white,
+                                                    ),
+                                              ),
+                                            )
+                                          : Icon(
+                                              color: AppColors.lightColor,
+                                              _geopoint != null
+                                                  ? Icons.check_circle
+                                                  : Icons.my_location,
+                                              size: 24,
+                                            ),
+                                    ),
+                                  ),
+                                ],
                               ),
+
+                              // GPS status message
+                              if (_geopoint != null)
+                                Padding(
+                                  padding: const EdgeInsets.only(
+                                    top: 8,
+                                    left: 4,
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.check_circle,
+                                        size: 14,
+                                        color: Colors.green[700],
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        'GPS location set successfully',
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          color: Colors.green[700],
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                )
+                              else if (_locationController.text.isEmpty)
+                                Padding(
+                                  padding: const EdgeInsets.only(
+                                    top: 8,
+                                    left: 4,
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.info_outline,
+                                        size: 14,
+                                        color: Colors.orange[700],
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Expanded(
+                                        child: Text(
+                                          'Tap GPS button to set location',
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            color: Colors.orange[700],
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
                               const SizedBox(height: 16),
                               BeautifulTextField(
                                 controller: _deliveryTimeController,

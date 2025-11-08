@@ -628,7 +628,7 @@ class _SearchScreenState extends State<SearchScreen> {
       }
 
       // Add success haptic feedback
-      HapticFeedback.selectionClick();
+      HapticFeedback.lightImpact();
 
       // Show success message
       if (mounted) {
@@ -643,7 +643,7 @@ class _SearchScreenState extends State<SearchScreen> {
       }
     } catch (error) {
       // Add error haptic feedback
-      HapticFeedback.heavyImpact();
+      HapticFeedback.lightImpact();
 
       // Show error message
       if (mounted) {

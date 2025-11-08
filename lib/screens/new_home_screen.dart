@@ -137,7 +137,7 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
       }
 
       // Add success haptic feedback
-      HapticFeedback.selectionClick();
+      HapticFeedback.lightImpact();
 
       // // Show success message
       // if (mounted) {
@@ -152,7 +152,7 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
       //      }
     } catch (error) {
       // Add error haptic feedback
-      HapticFeedback.heavyImpact();
+      HapticFeedback.lightImpact();
 
       // Show error message
       if (mounted) {

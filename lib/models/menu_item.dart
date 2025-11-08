@@ -6,6 +6,7 @@ class MenuItem {
   final double price;
   final String image;
   final String category;
+  final int quantity; // Available stock quantity
 
   MenuItem({
     required this.id,
@@ -15,6 +16,7 @@ class MenuItem {
     required this.price,
     required this.image,
     required this.category,
+    this.quantity = 999, // Default to 999 (unlimited)
   });
 
   factory MenuItem.fromJson(Map<String, dynamic> json) {
@@ -26,6 +28,8 @@ class MenuItem {
       price: (json['price'] as num).toDouble(),
       image: json['image'] as String,
       category: json['category'] as String,
+      quantity:
+          json['quantity'] as int? ?? 999, // Default to 999 if not present
     );
   }
 
@@ -38,6 +42,13 @@ class MenuItem {
       'price': price,
       'image': image,
       'category': category,
+      'quantity': quantity,
     };
   }
+
+  // Helper to check if item is in stock
+  bool get isInStock => quantity > 0;
+
+  // Helper to check if item is low stock (less than 10)
+  bool get isLowStock => quantity > 0 && quantity < 10;
 }

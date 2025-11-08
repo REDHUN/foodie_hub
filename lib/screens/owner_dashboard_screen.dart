@@ -7,7 +7,7 @@ import 'package:foodiehub/providers/auth_provider.dart';
 import 'package:foodiehub/providers/location_provider.dart';
 import 'package:foodiehub/providers/menu_cart_provider.dart';
 import 'package:foodiehub/providers/menu_item_provider.dart';
-import 'package:foodiehub/screens/restaurant_setup_screen.dart';
+import 'package:foodiehub/screens/owner_login_screen.dart';
 import 'package:foodiehub/services/restaurant_service.dart';
 import 'package:foodiehub/utils/constants.dart';
 import 'package:foodiehub/widgets/reliable_image.dart';
@@ -83,7 +83,7 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
       locationProvider.updateLocationFromRestaurant(restaurant.location);
 
       // Add success haptic feedback
-      HapticFeedback.selectionClick();
+      HapticFeedback.lightImpact();
 
       // // Show success message
       // if (mounted) {
@@ -104,7 +104,7 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
       });
 
       // Add error haptic feedback
-      HapticFeedback.heavyImpact();
+      HapticFeedback.lightImpact();
     }
   }
 
@@ -231,7 +231,7 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
                     final result = await Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => const RestaurantSetupScreen(),
+                        builder: (context) => const OwnerLoginScreen(),
                       ),
                     );
                     // Refresh data if restaurant was created
@@ -465,48 +465,214 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
 
   Widget _buildMenuItemTile(MenuItem item) {
     return Container(
+      margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Colors.grey[200]!),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withValues(alpha: 0.08),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
-      margin: const EdgeInsets.symmetric(vertical: 4),
-      child: ListTile(
-        leading: ReliableImage(
-          imageUrl: item.image,
-          width: 56,
-          height: 56,
-          fit: BoxFit.cover,
-          category: item.category,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        title: Text(item.name),
-        subtitle: Column(
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              item.description,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
+            // Image Section
+            Stack(
+              children: [
+                ReliableImage(
+                  imageUrl: item.image,
+                  width: 120,
+                  height: 120,
+                  fit: BoxFit.cover,
+                  category: item.category,
+                  borderRadius: BorderRadius.zero,
+                ),
+                // Category Badge
+                Positioned(
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.transparent,
+                          Colors.black.withValues(alpha: 0.7),
+                        ],
+                      ),
+                    ),
+                    child: Text(
+                      item.category,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      textAlign: TextAlign.center,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 4),
-            Text('₹${item.price.toStringAsFixed(2)} • ${item.category}'),
-          ],
-        ),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            IconButton(
-              icon: const Icon(
-                Icons.edit_outlined,
-                color: AppColors.primaryColor,
+            // Content Section
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Name
+                    Text(
+                      item.name,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF2C3E50),
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 6),
+                    // Description
+                    Text(
+                      item.description,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.grey[600],
+                        height: 1.3,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 8),
+                    // Price and Quantity Row
+                    Row(
+                      children: [
+                        // Price Badge
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryColor.withValues(
+                              alpha: 0.1,
+                            ),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.currency_rupee,
+                                size: 14,
+                                color: AppColors.primaryColor,
+                              ),
+                              Text(
+                                item.price.toStringAsFixed(0),
+                                style: const TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.primaryColor,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        // Quantity Badge
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: item.quantity == 0
+                                ? Colors.red.withValues(alpha: 0.1)
+                                : item.isLowStock
+                                ? Colors.orange.withValues(alpha: 0.1)
+                                : Colors.green.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.inventory_2_outlined,
+                                size: 14,
+                                color: item.quantity == 0
+                                    ? Colors.red[700]
+                                    : item.isLowStock
+                                    ? Colors.orange[700]
+                                    : Colors.green[700],
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                '${item.quantity}',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold,
+                                  color: item.quantity == 0
+                                      ? Colors.red[700]
+                                      : item.isLowStock
+                                      ? Colors.orange[700]
+                                      : Colors.green[700],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const Spacer(),
+                        // Action Buttons
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.blue[50],
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: IconButton(
+                            icon: const Icon(Icons.edit_outlined, size: 20),
+                            color: Colors.blue[700],
+                            onPressed: () => _showEditMenuItemDialog(item),
+                            tooltip: 'Edit',
+                            padding: const EdgeInsets.all(8),
+                            constraints: const BoxConstraints(),
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.red[50],
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: IconButton(
+                            icon: const Icon(Icons.delete_outline, size: 20),
+                            color: Colors.red[700],
+                            onPressed: () => _confirmDeleteMenuItem(item),
+                            tooltip: 'Delete',
+                            padding: const EdgeInsets.all(8),
+                            constraints: const BoxConstraints(),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
-              onPressed: () => _showEditMenuItemDialog(item),
-              tooltip: 'Edit Menu Item',
-            ),
-            IconButton(
-              icon: const Icon(Icons.delete_outline, color: Colors.red),
-              onPressed: () => _confirmDeleteMenuItem(item),
-              tooltip: 'Delete Menu Item',
             ),
           ],
         ),
@@ -522,6 +688,7 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
     final priceController = TextEditingController();
     final imageController = TextEditingController();
     final categoryController = TextEditingController();
+    final quantityController = TextEditingController(text: '999');
     final formKey = GlobalKey<FormState>();
     final menuItemProvider = context.read<MenuItemProvider>();
 
@@ -572,6 +739,21 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
                   ),
                   const SizedBox(height: 12),
                   _buildDialogTextField(
+                    controller: quantityController,
+                    label: 'Quantity (Stock)',
+                    keyboardType: TextInputType.number,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Quantity is required';
+                      }
+                      if (int.tryParse(value) == null) {
+                        return 'Enter a valid number';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  _buildDialogTextField(
                     controller: imageController,
                     label: 'Image URL',
                   ),
@@ -596,6 +778,8 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
 
                 final price =
                     double.tryParse(priceController.text.trim()) ?? 0.0;
+                final quantity =
+                    int.tryParse(quantityController.text.trim()) ?? 999;
                 final newMenuItem = MenuItem(
                   id: 'menu_${DateTime.now().millisecondsSinceEpoch}',
                   restaurantId: _restaurant!.id,
@@ -608,6 +792,7 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
                   category: categoryController.text.trim().isEmpty
                       ? 'General'
                       : categoryController.text.trim(),
+                  quantity: quantity,
                 );
 
                 final success = await menuItemProvider.addMenuItem(
@@ -642,13 +827,14 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
     required String label,
     TextInputType keyboardType = TextInputType.text,
     int maxLines = 1,
+    bool readOnly = false,
     String? Function(String?)? validator,
   }) {
     return TextFormField(
       controller: controller,
       keyboardType: keyboardType,
       maxLines: maxLines,
-
+      readOnly: readOnly,
       decoration: InputDecoration(
         enabledBorder: OutlineInputBorder(
           borderSide: BorderSide(color: Colors.grey.withValues(alpha: 0.3)),
@@ -670,6 +856,9 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
     final priceController = TextEditingController(text: item.price.toString());
     final imageController = TextEditingController(text: item.image);
     final categoryController = TextEditingController(text: item.category);
+    final quantityController = TextEditingController(
+      text: item.quantity.toString(),
+    );
     final formKey = GlobalKey<FormState>();
     final menuItemProvider = context.read<MenuItemProvider>();
     bool isUpdating = false;
@@ -729,6 +918,21 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
                       ),
                       const SizedBox(height: 12),
                       _buildDialogTextField(
+                        controller: quantityController,
+                        label: 'Quantity (Stock)',
+                        keyboardType: TextInputType.number,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Quantity is required';
+                          }
+                          if (int.tryParse(value) == null) {
+                            return 'Enter a valid number';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                      _buildDialogTextField(
                         controller: imageController,
                         label: 'Image URL',
                         validator: (value) => value == null || value.isEmpty
@@ -764,6 +968,9 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
                             final price =
                                 double.tryParse(priceController.text.trim()) ??
                                 0.0;
+                            final quantity =
+                                int.tryParse(quantityController.text.trim()) ??
+                                999;
 
                             final updatedMenuItem = MenuItem(
                               id: item.id,
@@ -773,6 +980,7 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
                               price: price,
                               image: imageController.text.trim(),
                               category: categoryController.text.trim(),
+                              quantity: quantity,
                             );
 
                             final success = await menuItemProvider
@@ -852,16 +1060,10 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
     final locationController = TextEditingController(
       text: restaurant.location ?? '',
     );
-    final latitudeController = TextEditingController(
-      text: restaurant.geopoint?.latitude.toString() ?? '',
-    );
-    final longitudeController = TextEditingController(
-      text: restaurant.geopoint?.longitude.toString() ?? '',
-    );
     final formKey = GlobalKey<FormState>();
     bool isUpdating = false;
     bool isGettingLocation = false;
-    String gpsLocationName = ''; // Store GPS location name
+    GeoPoint? geopoint = restaurant.geopoint; // Store GPS data directly
 
     await showDialog<void>(
       context: context,
@@ -929,215 +1131,135 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
                         label: 'Discount Offer (Optional)',
                       ),
                       const SizedBox(height: 12),
-                      _buildDialogTextField(
-                        controller: locationController,
-                        label: 'Location (e.g., Downtown, City Center)',
-                        validator: (value) => value == null || value.isEmpty
-                            ? 'Location is required'
-                            : null,
-                      ),
-                      const SizedBox(height: 16),
-                      // GPS Location Section
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Colors.grey[100],
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.grey[300]!),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Icon(
-                                  Icons.my_location,
-                                  color: AppColors.primaryColor,
-                                  size: 18,
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  'GPS Coordinates',
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.grey[800],
-                                  ),
-                                ),
-                              ],
+                      // Location field with GPS button
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: _buildDialogTextField(
+                              controller: locationController,
+                              label: 'Restaurant Location',
+                              readOnly: true,
+                              validator: (value) =>
+                                  value == null || value.isEmpty
+                                  ? 'Location is required'
+                                  : null,
                             ),
-                            const SizedBox(height: 8),
-                            // Show button only if location not set
-                            if (latitudeController.text.isEmpty ||
-                                longitudeController.text.isEmpty)
-                              ElevatedButton.icon(
-                                onPressed: isGettingLocation || isUpdating
-                                    ? null
-                                    : () async {
-                                        setState(() {
-                                          isGettingLocation = true;
-                                        });
+                          ),
+                          const SizedBox(width: 8),
+                          Container(
+                            margin: const EdgeInsets.only(top: 4),
+                            child: ElevatedButton(
+                              onPressed: isGettingLocation || isUpdating
+                                  ? null
+                                  : () async {
+                                      setState(() {
+                                        isGettingLocation = true;
+                                      });
 
-                                        try {
-                                          final locationProvider = context
-                                              .read<LocationProvider>();
-                                          final position =
-                                              await locationProvider
-                                                  .getUserLocation();
+                                      try {
+                                        final locationProvider = context
+                                            .read<LocationProvider>();
+                                        final position = await locationProvider
+                                            .getUserLocation();
 
-                                          if (position != null) {
-                                            setState(() {
-                                              latitudeController.text = position
-                                                  .latitude
-                                                  .toString();
-                                              longitudeController.text =
-                                                  position.longitude.toString();
+                                        if (position != null) {
+                                          setState(() {
+                                            geopoint = GeoPoint(
+                                              position.latitude,
+                                              position.longitude,
+                                            );
 
-                                              // Store GPS location name
-                                              gpsLocationName =
+                                            if (locationProvider
+                                                .locationName
+                                                .isNotEmpty) {
+                                              locationController.text =
                                                   locationProvider.locationName;
-
-                                              if (locationController
-                                                      .text
-                                                      .isEmpty &&
-                                                  locationProvider
-                                                      .locationName
-                                                      .isNotEmpty) {
-                                                locationController.text =
-                                                    locationProvider
-                                                        .locationName;
-                                              }
-                                            });
-
-                                            if (context.mounted) {
-                                              ScaffoldMessenger.of(
-                                                context,
-                                              ).showSnackBar(
-                                                const SnackBar(
-                                                  content: Text(
-                                                    'Location obtained! 📍',
-                                                  ),
-                                                  backgroundColor:
-                                                      AppColors.successColor,
-                                                  duration: Duration(
-                                                    seconds: 2,
-                                                  ),
-                                                ),
-                                              );
                                             }
-                                          }
-                                        } catch (e) {
+                                          });
+
                                           if (context.mounted) {
                                             ScaffoldMessenger.of(
                                               context,
                                             ).showSnackBar(
-                                              SnackBar(
-                                                content: Text('Error: $e'),
-                                                backgroundColor: Colors.red,
+                                              const SnackBar(
+                                                content: Text(
+                                                  'Location obtained! 📍',
+                                                ),
+                                                backgroundColor:
+                                                    AppColors.successColor,
+                                                duration: Duration(seconds: 2),
                                               ),
                                             );
                                           }
-                                        } finally {
-                                          setState(() {
-                                            isGettingLocation = false;
-                                          });
                                         }
-                                      },
-                                icon: isGettingLocation
-                                    ? SizedBox(
-                                        width: 14,
-                                        height: 14,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          color: Colors.white,
-                                        ),
-                                      )
-                                    : const Icon(Icons.gps_fixed, size: 16),
-                                label: Text(
-                                  isGettingLocation
-                                      ? 'Getting...'
-                                      : 'Use Current Location',
-                                  style: const TextStyle(fontSize: 12),
-                                ),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppColors.primaryColor,
-                                  foregroundColor: Colors.white,
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 8,
-                                  ),
-                                ),
-                              ),
-                            const SizedBox(height: 8),
-                            // Display current location if set
-                            if (latitudeController.text.isNotEmpty &&
-                                longitudeController.text.isNotEmpty)
-                              Container(
-                                padding: const EdgeInsets.all(10),
-                                decoration: BoxDecoration(
-                                  color: Colors.green[50],
-                                  borderRadius: BorderRadius.circular(6),
-                                  border: Border.all(color: Colors.green[300]!),
-                                ),
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      Icons.check_circle,
-                                      color: Colors.green[700],
-                                      size: 16,
-                                    ),
-                                    const SizedBox(width: 6),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            'Location Set',
-                                            style: TextStyle(
-                                              fontSize: 11,
-                                              fontWeight: FontWeight.w600,
-                                              color: Colors.green[900],
+                                      } catch (e) {
+                                        if (context.mounted) {
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            SnackBar(
+                                              content: Text('Error: $e'),
+                                              backgroundColor: Colors.red,
                                             ),
-                                          ),
-                                          const SizedBox(height: 2),
-                                          Text(
-                                            gpsLocationName.isNotEmpty
-                                                ? gpsLocationName
-                                                : 'Lat: ${double.parse(latitudeController.text).toStringAsFixed(4)}, Lng: ${double.parse(longitudeController.text).toStringAsFixed(4)}',
-                                            style: TextStyle(
-                                              fontSize: 10,
-                                              color: Colors.green[800],
-                                            ),
-                                            maxLines: 2,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    IconButton(
-                                      icon: Icon(
-                                        Icons.close,
-                                        color: Colors.green[700],
-                                        size: 16,
-                                      ),
-                                      padding: EdgeInsets.zero,
-                                      constraints: const BoxConstraints(),
-                                      onPressed: () {
+                                          );
+                                        }
+                                      } finally {
                                         setState(() {
-                                          latitudeController.clear();
-                                          longitudeController.clear();
-                                          gpsLocationName = '';
+                                          isGettingLocation = false;
                                         });
-                                      },
-                                      tooltip: 'Remove location',
-                                    ),
-                                  ],
+                                      }
+                                    },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.primaryColor,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.all(14),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
                                 ),
                               ),
-                          ],
-                        ),
+                              child: isGettingLocation
+                                  ? const SizedBox(
+                                      width: 16,
+                                      height: 16,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Colors.white,
+                                      ),
+                                    )
+                                  : Icon(
+                                      geopoint != null
+                                          ? Icons.check_circle
+                                          : Icons.my_location,
+                                      size: 18,
+                                    ),
+                            ),
+                          ),
+                        ],
                       ),
+                      // GPS status message
+                      if (geopoint != null)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 6, left: 4),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.check_circle,
+                                size: 12,
+                                color: Colors.green[700],
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                'GPS location set',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  color: Colors.green[700],
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                     ],
                   ),
                 ),
@@ -1169,21 +1291,6 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
                                   deliveryFeeController.text.trim(),
                                 ) ??
                                 0.0;
-
-                            // Parse GPS coordinates if provided
-                            GeoPoint? geopoint;
-                            if (latitudeController.text.isNotEmpty &&
-                                longitudeController.text.isNotEmpty) {
-                              final lat = double.tryParse(
-                                latitudeController.text.trim(),
-                              );
-                              final lng = double.tryParse(
-                                longitudeController.text.trim(),
-                              );
-                              if (lat != null && lng != null) {
-                                geopoint = GeoPoint(lat, lng);
-                              }
-                            }
 
                             final updatedRestaurant = Restaurant(
                               id: restaurant.id,
