@@ -1,3 +1,6 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:geoflutterfire_plus/geoflutterfire_plus.dart';
+
 class Restaurant {
   final String id;
   final String name;
@@ -9,6 +12,8 @@ class Restaurant {
   final String? discount;
   final String? ownerId;
   final String? location;
+  final GeoPoint? geopoint; // Geolocation coordinates
+  final double? distance; // Distance from user in meters
 
   Restaurant({
     required this.id,
@@ -21,9 +26,16 @@ class Restaurant {
     this.discount,
     this.ownerId,
     this.location,
+    this.geopoint,
+    this.distance,
   });
 
   factory Restaurant.fromJson(Map<String, dynamic> json) {
+    GeoPoint? geopoint;
+    if (json['position'] != null && json['position']['geopoint'] != null) {
+      geopoint = json['position']['geopoint'] as GeoPoint;
+    }
+
     return Restaurant(
       id: json['id'] as String,
       name: json['name'] as String,
@@ -35,11 +47,13 @@ class Restaurant {
       discount: json['discount'] as String?,
       ownerId: json['ownerId'] as String?,
       location: json['location'] as String?,
+      geopoint: geopoint,
+      distance: json['distance'] as double?,
     );
   }
 
   Map<String, dynamic> toJson() {
-    return {
+    final json = {
       'id': id,
       'name': name,
       'image': image,
@@ -51,6 +65,17 @@ class Restaurant {
       'ownerId': ownerId,
       'location': location,
     };
+
+    if (geopoint != null) {
+      // Generate geohash using GeoFlutterFire
+      final geoFirePoint = GeoFirePoint(geopoint!);
+      json['position'] = {
+        'geopoint': geopoint,
+        'geohash': geoFirePoint.geohash,
+      };
+    }
+
+    return json;
   }
 
   Restaurant copyWith({
@@ -64,6 +89,8 @@ class Restaurant {
     String? discount,
     String? ownerId,
     String? location,
+    GeoPoint? geopoint,
+    double? distance,
   }) {
     return Restaurant(
       id: id ?? this.id,
@@ -76,6 +103,18 @@ class Restaurant {
       discount: discount ?? this.discount,
       ownerId: ownerId ?? this.ownerId,
       location: location ?? this.location,
+      geopoint: geopoint ?? this.geopoint,
+      distance: distance ?? this.distance,
     );
+  }
+
+  /// Get formatted distance string
+  String getDistanceString() {
+    if (distance == null) return '';
+    final km = distance! / 1000;
+    if (km < 1) {
+      return '${distance!.toStringAsFixed(0)} m away';
+    }
+    return '${km.toStringAsFixed(2)} km away';
   }
 }

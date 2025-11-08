@@ -44,20 +44,37 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
     super.initState();
     // Load restaurants from Firebase on init
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<RestaurantProvider>(
-        context,
-        listen: false,
-      ).initializeRestaurants();
-
-      // Initialize location provider
-      Provider.of<LocationProvider>(
-        context,
-        listen: false,
-      ).initializeLocation();
+      _initializeLocationAndRestaurants();
     });
 
     // Add scroll listener for back to top button
     _scrollController.addListener(_scrollListener);
+  }
+
+  Future<void> _initializeLocationAndRestaurants() async {
+    final locationProvider = Provider.of<LocationProvider>(
+      context,
+      listen: false,
+    );
+    final restaurantProvider = Provider.of<RestaurantProvider>(
+      context,
+      listen: false,
+    );
+
+    // Get user's GPS location
+    final position = await locationProvider.getUserLocation();
+
+    if (position != null) {
+      // Load restaurants within 5km radius only
+      await restaurantProvider.loadRestaurantsByDistance(
+        position.latitude,
+        position.longitude,
+        radiusInKM: 5.0,
+      );
+    } else {
+      // Fallback to regular restaurant loading
+      restaurantProvider.initializeRestaurants();
+    }
   }
 
   @override
@@ -96,18 +113,31 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
     HapticFeedback.lightImpact();
 
     try {
-      // Show loading state and refresh data
+      final locationProvider = Provider.of<LocationProvider>(
+        context,
+        listen: false,
+      );
       final restaurantProvider = Provider.of<RestaurantProvider>(
         context,
         listen: false,
       );
 
-      // Force reload restaurants from Firebase
-      await restaurantProvider.loadRestaurants();
+      // Get user's GPS location and reload restaurants within 5km
+      final position = await locationProvider.getUserLocation();
+
+      if (position != null) {
+        await restaurantProvider.loadRestaurantsByDistance(
+          position.latitude,
+          position.longitude,
+          radiusInKM: 5.0,
+        );
+      } else {
+        // If location not available, show error
+        throw Exception('Location not available');
+      }
 
       // Add success haptic feedback
       HapticFeedback.selectionClick();
-      print("Refreshed Successfully");
 
       // // Show success message
       // if (mounted) {
@@ -207,113 +237,136 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
                     children: [
                       const SizedBox(height: 20),
                       // Promotional Banners
-                      Consumer<RestaurantProvider>(
-                        builder: (context, restaurantProvider, child) {
-                          final isLoading =
-                              restaurantProvider.restaurants.isEmpty;
-                          return isLoading
-                              ? ShimmerLoading(
-                                  isLoading: true,
-                                  child: const PromoBannerShimmer(),
-                                )
-                              : PromotionalBanner(
-                                  banners: samplePromoBanners,
-                                  height: 180,
-                                );
-                        },
+                      Consumer2<RestaurantProvider, LocationProvider>(
+                        builder:
+                            (
+                              context,
+                              restaurantProvider,
+                              locationProvider,
+                              child,
+                            ) {
+                              final isLoading =
+                                  restaurantProvider.isLoading ||
+                                  locationProvider.isLoadingLocation;
+                              return isLoading
+                                  ? ShimmerLoading(
+                                      isLoading: true,
+                                      child: const PromoBannerShimmer(),
+                                    )
+                                  : PromotionalBanner(
+                                      banners: samplePromoBanners,
+                                      height: 180,
+                                    );
+                            },
                       ),
                       const SizedBox(height: 20),
 
                       // Animated Promo Section
                       const SizedBox(height: 20),
                       // Categories Section
-                      Consumer<RestaurantProvider>(
-                        builder: (context, restaurantProvider, child) {
-                          final isLoading =
-                              restaurantProvider.restaurants.isEmpty;
-                          return isLoading
-                              ? Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 16.0,
-                                  ),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      ShimmerLoading(
-                                        isLoading: true,
-                                        child: const ShimmerBox(
-                                          width: 200,
-                                          height: 18,
-                                        ),
+                      Consumer2<RestaurantProvider, LocationProvider>(
+                        builder:
+                            (
+                              context,
+                              restaurantProvider,
+                              locationProvider,
+                              child,
+                            ) {
+                              final isLoading =
+                                  restaurantProvider.isLoading ||
+                                  locationProvider.isLoadingLocation;
+                              return isLoading
+                                  ? Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 16.0,
                                       ),
-                                      const SizedBox(height: 12),
-                                      SizedBox(
-                                        height: 120,
-                                        child: ListView.builder(
-                                          scrollDirection: Axis.horizontal,
-                                          itemCount: 8,
-                                          itemBuilder: (context, index) {
-                                            return ShimmerLoading(
-                                              isLoading: true,
-                                              child:
-                                                  const CategoryItemShimmer(),
-                                            );
-                                          },
-                                        ),
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          ShimmerLoading(
+                                            isLoading: true,
+                                            child: const ShimmerBox(
+                                              width: 200,
+                                              height: 18,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 12),
+                                          SizedBox(
+                                            height: 120,
+                                            child: ListView.builder(
+                                              scrollDirection: Axis.horizontal,
+                                              itemCount: 8,
+                                              itemBuilder: (context, index) {
+                                                return ShimmerLoading(
+                                                  isLoading: true,
+                                                  child:
+                                                      const CategoryItemShimmer(),
+                                                );
+                                              },
+                                            ),
+                                          ),
+                                        ],
                                       ),
-                                    ],
-                                  ),
-                                )
-                              : _buildCategoriesSection();
-                        },
+                                    )
+                                  : _buildCategoriesSection();
+                            },
                       ),
                       const SizedBox(height: 30),
                       // Top-rated Section
                       _buildTopRatedSection(context),
                       const SizedBox(height: 10),
                       // Featured Deals
-                      Consumer<RestaurantProvider>(
-                        builder: (context, restaurantProvider, child) {
-                          final isLoading =
-                              restaurantProvider.restaurants.isEmpty;
-                          return isLoading
-                              ? Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 16.0,
-                                      ),
-                                      child: ShimmerLoading(
-                                        isLoading: true,
-                                        child: const ShimmerBox(
-                                          width: 150,
-                                          height: 20,
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(height: 12),
-                                    SizedBox(
-                                      height: 200,
-                                      child: ListView.builder(
-                                        scrollDirection: Axis.horizontal,
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 16,
-                                        ),
-                                        itemCount: 3,
-                                        itemBuilder: (context, index) {
-                                          return ShimmerLoading(
+                      Consumer2<RestaurantProvider, LocationProvider>(
+                        builder:
+                            (
+                              context,
+                              restaurantProvider,
+                              locationProvider,
+                              child,
+                            ) {
+                              final isLoading =
+                                  restaurantProvider.isLoading ||
+                                  locationProvider.isLoadingLocation;
+                              return isLoading
+                                  ? Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 16.0,
+                                          ),
+                                          child: ShimmerLoading(
                                             isLoading: true,
-                                            child: const FeaturedDealShimmer(),
-                                          );
-                                        },
-                                      ),
-                                    ),
-                                  ],
-                                )
-                              : FeaturedDeals(deals: sampleFeaturedDeals);
-                        },
+                                            child: const ShimmerBox(
+                                              width: 150,
+                                              height: 20,
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 12),
+                                        SizedBox(
+                                          height: 200,
+                                          child: ListView.builder(
+                                            scrollDirection: Axis.horizontal,
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 16,
+                                            ),
+                                            itemCount: 3,
+                                            itemBuilder: (context, index) {
+                                              return ShimmerLoading(
+                                                isLoading: true,
+                                                child:
+                                                    const FeaturedDealShimmer(),
+                                              );
+                                            },
+                                          ),
+                                        ),
+                                      ],
+                                    )
+                                  : FeaturedDeals(deals: sampleFeaturedDeals);
+                            },
                       ),
                       const SizedBox(height: 20),
                       // All Restaurants Section
@@ -419,32 +472,108 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
                 ),
                 Consumer<LocationProvider>(
                   builder: (context, locationProvider, child) {
-                    final location = locationProvider.getDisplayLocation();
-
-                    // Hide location display if location is empty
-                    if (location.isEmpty) {
-                      return const SizedBox.shrink();
-                    }
-
-                    return Row(
-                      children: [
-                        Icon(
-                          Icons.location_on,
-                          size: 16,
-                          color: Colors.grey[600],
-                        ),
-                        const SizedBox(width: 4),
-                        Expanded(
-                          child: Text(
-                            location,
+                    if (locationProvider.isLoadingLocation) {
+                      return Row(
+                        children: [
+                          SizedBox(
+                            width: 12,
+                            height: 12,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: AppColors.primaryColor,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Getting location...',
                             style: TextStyle(
-                              fontSize: 14,
+                              fontSize: 12,
                               color: Colors.grey[600],
                             ),
                           ),
+                        ],
+                      );
+                    }
+
+                    final locationName = locationProvider.locationName;
+
+                    // Show location name if available
+                    if (locationName.isNotEmpty) {
+                      return GestureDetector(
+                        onTap: () async {
+                          HapticFeedback.lightImpact();
+                          final position = await locationProvider
+                              .getUserLocation();
+                          if (position != null && mounted) {
+                            final restaurantProvider =
+                                Provider.of<RestaurantProvider>(
+                                  context,
+                                  listen: false,
+                                );
+                            await restaurantProvider.enableGeolocationSorting(
+                              position.latitude,
+                              position.longitude,
+                              radiusInKM: 5.0,
+                            );
+                          }
+                        },
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.location_pin,
+                              size: 16,
+                              color: AppColors.primaryColor,
+                            ),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                locationName,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey[700],
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
                         ),
-                      ],
-                    );
+                      );
+                    }
+
+                    // Show error if any
+                    if (locationProvider.locationError != null) {
+                      return GestureDetector(
+                        onTap: () async {
+                          HapticFeedback.lightImpact();
+                          await locationProvider.getUserLocation();
+                        },
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.location_off,
+                              size: 16,
+                              color: Colors.red,
+                            ),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                'Tap to enable location',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.red,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+
+                    return const SizedBox.shrink();
                   },
                 ),
               ],
@@ -885,13 +1014,20 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
   }
 
   Widget _buildTopRatedSection(BuildContext context) {
-    return Consumer<RestaurantProvider>(
-      builder: (context, restaurantProvider, child) {
-        final isLoading = restaurantProvider.restaurants.isEmpty;
-        final restaurants = restaurantProvider.restaurants.isNotEmpty
-            ? restaurantProvider.restaurants
-            : sampleRestaurants;
+    return Consumer2<RestaurantProvider, LocationProvider>(
+      builder: (context, restaurantProvider, locationProvider, child) {
+        // Use proper loading state (show shimmer while getting location OR loading restaurants)
+        final isLoading =
+            restaurantProvider.isLoading || locationProvider.isLoadingLocation;
+
+        // Use actual restaurants only (no sample data)
+        final restaurants = restaurantProvider.restaurants;
         final topRestaurants = restaurants.take(3).toList();
+
+        // Hide section if no restaurants
+        if (!isLoading && restaurants.isEmpty) {
+          return const SizedBox.shrink();
+        }
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -932,15 +1068,185 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
     );
   }
 
+  Widget _buildNoRestaurantsFound(BuildContext context) {
+    return Consumer<LocationProvider>(
+      builder: (context, locationProvider, child) {
+        return Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            children: [
+              const SizedBox(height: 40),
+              Icon(Icons.location_off, size: 80, color: Colors.grey[400]),
+              const SizedBox(height: 24),
+              Text(
+                'No Restaurants Found Nearby',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey[800],
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'We couldn\'t find any restaurants within 5km of your location.',
+                style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton.icon(
+                onPressed: () async {
+                  HapticFeedback.lightImpact();
+                  final position = await locationProvider.getUserLocation();
+                  if (position != null && mounted) {
+                    final restaurantProvider = Provider.of<RestaurantProvider>(
+                      context,
+                      listen: false,
+                    );
+                    await restaurantProvider.loadRestaurantsByDistance(
+                      position.latitude,
+                      position.longitude,
+                      radiusInKM: 5.0,
+                    );
+                  }
+                },
+                icon: const Icon(Icons.my_location, size: 20),
+                label: const Text('Change Location'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryColor,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 14,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Try moving to a different location or check back later',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey[500],
+                  fontStyle: FontStyle.italic,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   Widget _buildAllRestaurantsSection(BuildContext context) {
-    return Consumer<RestaurantProvider>(
-      builder: (context, restaurantProvider, child) {
-        final allRestaurants = restaurantProvider.restaurants.isNotEmpty
+    return Consumer2<RestaurantProvider, LocationProvider>(
+      builder: (context, restaurantProvider, locationProvider, child) {
+        // Show loading state (while getting location OR loading restaurants)
+        if (restaurantProvider.isLoading ||
+            locationProvider.isLoadingLocation) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'All Restaurants',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      'Restaurants with online food delivery in Bangalore',
+                      style: TextStyle(fontSize: 12, color: Colors.grey),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              // Shimmer loading for restaurant cards
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: 5, // Show 5 shimmer cards
+                  itemBuilder: (context, index) {
+                    return ShimmerLoading(
+                      isLoading: true,
+                      child: Container(
+                        margin: const EdgeInsets.only(bottom: 20),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.grey[200]!),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Image shimmer
+                            const ShimmerBox(
+                              width: double.infinity,
+                              height: 150,
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.all(12),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  // Title shimmer
+                                  const ShimmerBox(width: 200, height: 16),
+                                  const SizedBox(height: 8),
+                                  // Rating shimmer
+                                  Row(
+                                    children: [
+                                      const ShimmerBox(width: 80, height: 14),
+                                      const SizedBox(width: 8),
+                                      const ShimmerBox(width: 60, height: 14),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 8),
+                                  // Location shimmer
+                                  const ShimmerBox(width: 150, height: 13),
+                                  const SizedBox(height: 8),
+                                  // Cuisine shimmer
+                                  const ShimmerBox(width: 120, height: 14),
+                                  const SizedBox(height: 8),
+                                  // Delivery fee shimmer
+                                  const ShimmerBox(width: 100, height: 12),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          );
+        }
+
+        // Check if no restaurants found (not using sample data)
+        final hasRealRestaurants = restaurantProvider.restaurants.isNotEmpty;
+        final allRestaurants = hasRealRestaurants
             ? restaurantProvider.restaurants
-            : sampleRestaurants;
+            : <Restaurant>[]; // Empty list instead of sample
 
         // Apply filters
         final filteredRestaurants = _applyFilters(allRestaurants);
+
+        // Show "no restaurants found" message if empty
+        if (!hasRealRestaurants || filteredRestaurants.isEmpty) {
+          return _buildNoRestaurantsFound(context);
+        }
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1252,6 +1558,22 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
   }
 
   Widget _buildRestaurantCard(BuildContext context, Restaurant restaurant) {
+    // Debug: Check if distance is available
+    print(
+      'Restaurant: ${restaurant.name}, Distance: ${restaurant.distance}, Location: ${restaurant.location}',
+    );
+
+    // Calculate estimated delivery time based on distance
+    String estimatedTime = restaurant.deliveryTime;
+    if (restaurant.distance != null) {
+      // Convert distance from meters to km
+      final distanceInKm = restaurant.distance! / 1000;
+      // Estimate: 5 min base + 5 min per km (minimum 10 min)
+      final minTime = (5 + (distanceInKm * 5)).round().clamp(10, 120);
+      final maxTime = (minTime + 15).clamp(15, 135);
+      estimatedTime = '$minTime-$maxTime min';
+    }
+
     return Container(
       width: 160,
       margin: const EdgeInsets.only(right: 12),
@@ -1343,7 +1665,7 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
                 const SizedBox(width: 4),
                 Expanded(
                   child: Text(
-                    restaurant.deliveryTime,
+                    estimatedTime,
                     style: const TextStyle(fontSize: 11, color: Colors.grey),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -1352,12 +1674,33 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
               ],
             ),
             const SizedBox(height: 4),
-            Text(
-              restaurant.cuisine,
-              style: const TextStyle(fontSize: 11, color: Colors.grey),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
+            // Show distance if available
+            if (restaurant.distance != null)
+              Row(
+                children: [
+                  Icon(
+                    Icons.location_on,
+                    size: 11,
+                    color: AppColors.primaryColor,
+                  ),
+                  const SizedBox(width: 2),
+                  Expanded(
+                    child: Text(
+                      '${(restaurant.distance! / 1000).toStringAsFixed(1)} km away',
+                      style: TextStyle(fontSize: 10, color: Colors.grey[600]),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              )
+            else
+              Text(
+                restaurant.cuisine,
+                style: const TextStyle(fontSize: 11, color: Colors.grey),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
           ],
         ),
       ),
@@ -1365,6 +1708,17 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
   }
 
   Widget _buildFullRestaurantCard(BuildContext context, Restaurant restaurant) {
+    // Calculate estimated delivery time based on distance
+    String estimatedTime = restaurant.deliveryTime;
+    if (restaurant.distance != null) {
+      // Convert distance from meters to km
+      final distanceInKm = restaurant.distance! / 1000;
+      // Estimate: 5 min base + 5 min per km (minimum 10 min)
+      final minTime = (5 + (distanceInKm * 5)).round().clamp(10, 120);
+      final maxTime = (minTime + 15).clamp(15, 135);
+      estimatedTime = '$minTime-$maxTime min';
+    }
+
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
       decoration: BoxDecoration(
@@ -1458,7 +1812,7 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
                         style: const TextStyle(fontSize: 14),
                       ),
                       Text(
-                        restaurant.deliveryTime,
+                        estimatedTime,
                         style: const TextStyle(
                           fontSize: 14,
                           color: Colors.grey,
@@ -1466,6 +1820,48 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
                       ),
                     ],
                   ),
+                  const SizedBox(height: 4),
+                  // Show distance if available
+                  if (restaurant.distance != null)
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.location_on,
+                          size: 14,
+                          color: AppColors.primaryColor,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${(restaurant.distance! / 1000).toStringAsFixed(1)} km away',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.grey[700],
+                          ),
+                        ),
+                      ],
+                    )
+                  else if (restaurant.location != null)
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.location_on,
+                          size: 14,
+                          color: Colors.grey[600],
+                        ),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            restaurant.location!,
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.grey[700],
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
                   const SizedBox(height: 4),
                   Text(
                     restaurant.cuisine,

@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:foodiehub/models/menu_item.dart';
@@ -851,8 +852,16 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
     final locationController = TextEditingController(
       text: restaurant.location ?? '',
     );
+    final latitudeController = TextEditingController(
+      text: restaurant.geopoint?.latitude.toString() ?? '',
+    );
+    final longitudeController = TextEditingController(
+      text: restaurant.geopoint?.longitude.toString() ?? '',
+    );
     final formKey = GlobalKey<FormState>();
     bool isUpdating = false;
+    bool isGettingLocation = false;
+    String gpsLocationName = ''; // Store GPS location name
 
     await showDialog<void>(
       context: context,
@@ -927,6 +936,208 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
                             ? 'Location is required'
                             : null,
                       ),
+                      const SizedBox(height: 16),
+                      // GPS Location Section
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[100],
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.grey[300]!),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.my_location,
+                                  color: AppColors.primaryColor,
+                                  size: 18,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'GPS Coordinates',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.grey[800],
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            // Show button only if location not set
+                            if (latitudeController.text.isEmpty ||
+                                longitudeController.text.isEmpty)
+                              ElevatedButton.icon(
+                                onPressed: isGettingLocation || isUpdating
+                                    ? null
+                                    : () async {
+                                        setState(() {
+                                          isGettingLocation = true;
+                                        });
+
+                                        try {
+                                          final locationProvider = context
+                                              .read<LocationProvider>();
+                                          final position =
+                                              await locationProvider
+                                                  .getUserLocation();
+
+                                          if (position != null) {
+                                            setState(() {
+                                              latitudeController.text = position
+                                                  .latitude
+                                                  .toString();
+                                              longitudeController.text =
+                                                  position.longitude.toString();
+
+                                              // Store GPS location name
+                                              gpsLocationName =
+                                                  locationProvider.locationName;
+
+                                              if (locationController
+                                                      .text
+                                                      .isEmpty &&
+                                                  locationProvider
+                                                      .locationName
+                                                      .isNotEmpty) {
+                                                locationController.text =
+                                                    locationProvider
+                                                        .locationName;
+                                              }
+                                            });
+
+                                            if (context.mounted) {
+                                              ScaffoldMessenger.of(
+                                                context,
+                                              ).showSnackBar(
+                                                const SnackBar(
+                                                  content: Text(
+                                                    'Location obtained! 📍',
+                                                  ),
+                                                  backgroundColor:
+                                                      AppColors.successColor,
+                                                  duration: Duration(
+                                                    seconds: 2,
+                                                  ),
+                                                ),
+                                              );
+                                            }
+                                          }
+                                        } catch (e) {
+                                          if (context.mounted) {
+                                            ScaffoldMessenger.of(
+                                              context,
+                                            ).showSnackBar(
+                                              SnackBar(
+                                                content: Text('Error: $e'),
+                                                backgroundColor: Colors.red,
+                                              ),
+                                            );
+                                          }
+                                        } finally {
+                                          setState(() {
+                                            isGettingLocation = false;
+                                          });
+                                        }
+                                      },
+                                icon: isGettingLocation
+                                    ? SizedBox(
+                                        width: 14,
+                                        height: 14,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: Colors.white,
+                                        ),
+                                      )
+                                    : const Icon(Icons.gps_fixed, size: 16),
+                                label: Text(
+                                  isGettingLocation
+                                      ? 'Getting...'
+                                      : 'Use Current Location',
+                                  style: const TextStyle(fontSize: 12),
+                                ),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.primaryColor,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 8,
+                                  ),
+                                ),
+                              ),
+                            const SizedBox(height: 8),
+                            // Display current location if set
+                            if (latitudeController.text.isNotEmpty &&
+                                longitudeController.text.isNotEmpty)
+                              Container(
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: Colors.green[50],
+                                  borderRadius: BorderRadius.circular(6),
+                                  border: Border.all(color: Colors.green[300]!),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.check_circle,
+                                      color: Colors.green[700],
+                                      size: 16,
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            'Location Set',
+                                            style: TextStyle(
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.w600,
+                                              color: Colors.green[900],
+                                            ),
+                                          ),
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            gpsLocationName.isNotEmpty
+                                                ? gpsLocationName
+                                                : 'Lat: ${double.parse(latitudeController.text).toStringAsFixed(4)}, Lng: ${double.parse(longitudeController.text).toStringAsFixed(4)}',
+                                            style: TextStyle(
+                                              fontSize: 10,
+                                              color: Colors.green[800],
+                                            ),
+                                            maxLines: 2,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    IconButton(
+                                      icon: Icon(
+                                        Icons.close,
+                                        color: Colors.green[700],
+                                        size: 16,
+                                      ),
+                                      padding: EdgeInsets.zero,
+                                      constraints: const BoxConstraints(),
+                                      onPressed: () {
+                                        setState(() {
+                                          latitudeController.clear();
+                                          longitudeController.clear();
+                                          gpsLocationName = '';
+                                        });
+                                      },
+                                      tooltip: 'Remove location',
+                                    ),
+                                  ],
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -959,6 +1170,21 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
                                 ) ??
                                 0.0;
 
+                            // Parse GPS coordinates if provided
+                            GeoPoint? geopoint;
+                            if (latitudeController.text.isNotEmpty &&
+                                longitudeController.text.isNotEmpty) {
+                              final lat = double.tryParse(
+                                latitudeController.text.trim(),
+                              );
+                              final lng = double.tryParse(
+                                longitudeController.text.trim(),
+                              );
+                              if (lat != null && lng != null) {
+                                geopoint = GeoPoint(lat, lng);
+                              }
+                            }
+
                             final updatedRestaurant = Restaurant(
                               id: restaurant.id,
                               name: nameController.text.trim(),
@@ -974,6 +1200,7 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
                               location: locationController.text.trim().isEmpty
                                   ? null
                                   : locationController.text.trim(),
+                              geopoint: geopoint, // Include GPS coordinates
                             );
 
                             final success = await _restaurantService

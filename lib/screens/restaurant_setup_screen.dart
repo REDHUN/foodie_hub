@@ -1,5 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:foodiehub/models/restaurant.dart';
 import 'package:foodiehub/providers/auth_provider.dart';
 import 'package:foodiehub/providers/location_provider.dart';
@@ -30,6 +30,11 @@ class _RestaurantSetupScreenState extends State<RestaurantSetupScreen> {
   final _locationController = TextEditingController();
 
   bool _isLoading = false;
+  bool _isGettingLocation = false;
+
+  // Store GPS data directly (no need for text controllers)
+  GeoPoint? _geopoint;
+  String _gpsLocationName = '';
 
   @override
   void dispose() {
@@ -104,7 +109,7 @@ class _RestaurantSetupScreenState extends State<RestaurantSetupScreen> {
               // Location (Required Field)
               BeautifulTextField(
                 controller: _locationController,
-                label: 'Location',
+                label: 'Location Address',
                 hint: 'e.g., Downtown, City Center',
                 prefixIcon: Icons.location_on,
                 validator: (value) {
@@ -113,6 +118,138 @@ class _RestaurantSetupScreenState extends State<RestaurantSetupScreen> {
                   }
                   return null;
                 },
+              ),
+              const SizedBox(height: 12),
+
+              // GPS Location Section
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.grey[100],
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey[300]!),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.my_location,
+                          color: AppColors.primaryColor,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'GPS Coordinates (Optional)',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.grey[800],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    // Display current location if set
+                    if (_geopoint != null)
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.green[50],
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.green[300]!),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.check_circle,
+                              color: Colors.green[700],
+                              size: 20,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Location Set',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.green[900],
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    _gpsLocationName.isNotEmpty
+                                        ? _gpsLocationName
+                                        : 'Lat: ${_geopoint!.latitude.toStringAsFixed(4)}, Lng: ${_geopoint!.longitude.toStringAsFixed(4)}',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.green[800],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            IconButton(
+                              icon: Icon(
+                                Icons.close,
+                                color: Colors.green[700],
+                                size: 20,
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  _geopoint = null;
+                                  _gpsLocationName = '';
+                                });
+                              },
+                              tooltip: 'Remove location',
+                            ),
+                          ],
+                        ),
+                      )
+                    else
+                      ElevatedButton.icon(
+                        onPressed: _isGettingLocation
+                            ? null
+                            : _getCurrentLocation,
+                        icon: _isGettingLocation
+                            ? SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Icon(Icons.gps_fixed, size: 18),
+                        label: Text(
+                          _isGettingLocation
+                              ? 'Getting Location...'
+                              : 'Set Current Location',
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primaryColor,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                        ),
+                      ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Set GPS location to enable location-based restaurant discovery',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[600],
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  ],
+                ),
               ),
               const SizedBox(height: 20),
 
@@ -237,6 +374,69 @@ class _RestaurantSetupScreenState extends State<RestaurantSetupScreen> {
     );
   }
 
+  Future<void> _getCurrentLocation() async {
+    setState(() {
+      _isGettingLocation = true;
+    });
+
+    try {
+      final locationProvider = context.read<LocationProvider>();
+      final position = await locationProvider.getUserLocation();
+
+      if (position != null) {
+        setState(() {
+          // Store GPS coordinates directly as GeoPoint
+          _geopoint = GeoPoint(position.latitude, position.longitude);
+
+          // Store GPS location name
+          _gpsLocationName = locationProvider.locationName;
+
+          // Also update location address field if empty
+          if (_locationController.text.isEmpty &&
+              locationProvider.locationName.isNotEmpty) {
+            _locationController.text = locationProvider.locationName;
+          }
+        });
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Location obtained successfully! 📍'),
+              backgroundColor: AppColors.successColor,
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                locationProvider.locationError ?? 'Failed to get location',
+              ),
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 3),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    } finally {
+      setState(() {
+        _isGettingLocation = false;
+      });
+    }
+  }
+
   Future<void> _createRestaurant() async {
     if (!_formKey.currentState!.validate()) {
       return;
@@ -264,6 +464,7 @@ class _RestaurantSetupScreenState extends State<RestaurantSetupScreen> {
       final deliveryFee =
           double.tryParse(_deliveryFeeController.text.trim()) ?? 0.0;
 
+      // Use the stored GeoPoint (no parsing needed!)
       final restaurant = Restaurant(
         id: 'restaurant_${DateTime.now().millisecondsSinceEpoch}',
         name: _nameController.text.trim(),
@@ -276,7 +477,8 @@ class _RestaurantSetupScreenState extends State<RestaurantSetupScreen> {
             ? null
             : _discountController.text.trim(),
         ownerId: user.uid,
-        location: _locationController.text.trim(), // Include location field
+        location: _locationController.text.trim(),
+        geopoint: _geopoint, // Use stored GeoPoint directly
       );
 
       final success = await _restaurantService.addRestaurant(restaurant);
